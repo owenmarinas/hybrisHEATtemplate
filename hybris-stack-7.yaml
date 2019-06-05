@@ -1,0 +1,360 @@
+#
+heat_template_version: 2015-10-15
+
+description: |
+ # For DEv only. This stack is intended for low to medium traffic 
+ hybris websites and can be scaled as needed to accommodate future
+ growth.  This stack will include a Cloud Load Balancer, Cloud
+ Database, 2 webs, 2 hybris and 2 solrs servers.  
+ It also will include Cloud Monitoring.
+
+parameters:
+  db_user:
+    type: string
+    default: dbuser
+    label: Database User
+    description: Username to configure for SQL
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9.-_]{1,255}$"
+      description: Only alphanumeric characters, '-', '_', and '.'
+    immutable: true
+  db_name:
+    type: string
+    default: hybrisdb
+    label: Database Name
+    description: Database to configure in SQL
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9.-_]{1,255}$"
+      description: Only alphanumeric characters, '-', '_', and '.'
+    immutable: true
+  database_disk:
+    type: number
+    default: 15
+    constraints:
+    - range:
+        min: 15
+        max: 90
+    label: Database Disk (in GB)
+    description: Size of the Cloud Database volume in GB
+    immutable: true
+  database_flavor:
+    type: string
+    default: 2GB Instance
+    label: Cloud Database Flavor
+    description: Flavor for the Cloud Database
+    constraints:
+    - allowed_values:
+      - 2GB Instance
+      - 4GB Instance
+      - 8GB Instance
+      - 16GB Instance
+  app_server_flavor:
+    type: string
+    default: 8 GB General Purpose v1
+    label: hybris Server Flavor
+    description: Flavor of Cloud Server for hybris servers 
+    constraints:
+    - allowed_values:
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  web_server_flavor:
+    type: string
+    default: 2 GB General Purpose v1
+    label: web Server Flavor
+    description: Flavor of Cloud Server for web servers
+    constraints:
+    - allowed_values:
+      - 2 GB General Purpose v1
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  solr_server_flavor:
+    type: string
+    default: 2 GB General Purpose v1
+    label: solr Server Flavor
+    description: Flavor of Cloud Server to be used for SOLR servers in this stack
+    constraints:
+    - allowed_values:
+      - 2 GB General Purpose v1
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  web_server_count:
+    type: number
+    default: 1
+    label: Number of web Servers
+    description: Number of web nodes
+    constraints:
+      - range: { min: 0, max: 4 }
+  hybris_server_count:
+    type: number
+    default: 1
+    label: Number of hybris Servers
+    description: Number of hybris nodes
+    constraints:
+      - range: { min: 1, max: 4 }
+  hybris_admin_count:
+    type: number
+    default: 1
+    label: Number of hybris Servers
+    description: Number of hybris nodes
+    constraints:
+      - range: { min: 1, max: 2 }
+  solr_slaves_server_count:
+    type: number
+    default: 1
+    label: Number of solr slave Servers
+    description: Number of SOLR slaves nodes
+    constraints:
+      - range: { min: 0, max: 4 }
+
+resources:
+  database_pass:
+    type: OS::Heat::RandomString
+  hybrisAdminInitScript:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      config:
+        str_replace:
+          params:
+            $mydbpass: { get_resource: database_pass}
+            $mydbhost: { get_attr: [hybris_database, hostname] }
+            $myhybdbname: {get_param: db_name }
+            $myhybdbuser: {get_param: db_user }
+          template: |
+                    #!/usr/bin/env bash
+                    # license: Apache
+                    echo "DBUSERPASSWD -- $mydbpass" >>/root/hybrisinfo.txt
+                    echo "DBHOST -- $mydbhost"       >>/root/hybrisinfo.txt
+                    echo "HYBRISDB -- $myhybdbname"  >>/root/hybrisinfo.txt
+                    echo "DBUSER -- $myhybdbuser"    >>/root/hybrisinfo.txt
+                    sed -i "s/DBHOST/$mydbhost/" /opt/hybris/config/local.properties
+                    sed -i "s/DBUSERPASSWD/$mydbpass/" /opt/hybris/config/local.properties
+                    sed -i "s/HYBRISDB/$myhybdbname/" /opt/hybris/config/local.properties
+                    sed -i "s/DBUSER/$myhybdbuser/" /opt/hybris/config/local.properties                    
+                    cat << EOF >> /usr/local/bin/compileHybris.sh
+                     systemctl stop hybris
+                     cd /opt/hybris/bin/platform/
+                     source ./setantenv.sh
+                     ant clean all >/root/ant-output.log 2>&1
+                     sleep 30 ; while ! grep "SUCCESSFUL" /root/ant-output.log ; do echo "running ant..." ; sleep 10 ; done
+                     ant initialize -Dtenant=master >/root/ant-init-output.log 2>&1
+                     #wait 15 minutes 
+                     sleep 600 ; while ! grep "SUCCESSFUL" /root/ant-init-output.log ; do echo "running ant..." ; sleep 60 ; done
+                     chown hybris.hybris /opt/hybris* -R
+                     rm -rf /var/log/hybris/*
+                     systemctl start hybris
+                     systemctl enable hybris
+                    EOF
+                    bash /usr/local/bin/compileHybris.sh
+                    #while ! grep "SUCCESSFUL" /var/log/messages ; do echo "not found";sleep 5;done
+  hybrisInitScript:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      config:
+        str_replace:
+          params:
+            $mydbpass: { get_resource: database_pass}
+            $mydbhost: { get_attr: [hybris_database, hostname] }
+            $myhybdbname: {get_param: db_name }
+            $myhybdbuser: {get_param: db_user }
+          template: |
+                    #!/usr/bin/env bash
+                    # license: Apache
+                    #echo "DBUSERPASSWD -- $mydbpass" >>/root/hybrisinfo.txt
+                    #echo "DBHOST -- $mydbhost"       >>/root/hybrisinfo.txt
+                    #echo "HYBRISDB -- $myhybdbname"  >>/root/hybrisinfo.txt
+                    #echo "DBUSER -- $myhybdbuser"    >>/root/hybrisinfo.txt
+                    sed -i "s/DBHOST/$mydbhost/" /opt/hybris/config/local.properties
+                    sed -i "s/DBUSERPASSWD/$mydbpass/" /opt/hybris/config/local.properties
+                    sed -i "s/HYBRISDB/$myhybdbname/" /opt/hybris/config/local.properties
+                    sed -i "s/DBUSER/$myhybdbuser/" /opt/hybris/config/local.properties      
+                    cat << EOF >> /usr/local/bin/compileHybris.sh
+                     #wait for 20 minutes or so to compile, waiting for the admin to init the DB
+                     sleep 1500
+                     systemctl stop hybris 
+                     cd /opt/hybris/bin/platform/
+                     source ./setantenv.sh
+                     ant clean all >/root/ant-output.log 2>&1
+                     while ! grep "SUCCESSFUL" /root/ant-output.log ; do echo "running ant..." ; sleep 10 ; done
+                     chown hybris.hybris /opt/hybris* -R
+                     rm -rf /var/log/hybris/*
+                     systemctl start hybris
+                     systemctl enable hybris
+                    EOF
+                    bash /usr/local/bin/compileHybris.sh 
+  public_lb:
+    depends_on: web-servers
+    type: Rackspace::Cloud::LoadBalancer
+    properties:
+      name: public_lb
+      nodes:
+      - addresses: { get_attr: [ web-servers, networks, private, 0 ]  }
+        port: 80
+        condition: ENABLED
+      protocol: HTTP
+      halfClosed: False
+      algorithm: LEAST_CONNECTIONS
+      connectionThrottle:
+        maxConnections: 50
+        minConnections: 50
+        maxConnectionRate: 50
+        rateInterval: 50
+      port: 80
+      timeout: 120
+      sessionPersistence: HTTP_COOKIE
+      virtualIps:
+      - type: PUBLIC
+        ipVersion: IPV4
+      healthMonitor:
+        type: HTTP
+        delay: 120
+        timeout: 10
+        attemptsBeforeDeactivation: 2
+        path: /
+        statusRegex: .*
+        bodyRegex: .*
+      contentCaching: ENABLED
+  hybris_lb:
+    depends_on: hybris-servers
+    type: "Rackspace::Cloud::LoadBalancer"
+    properties:
+      name: hybris_loadbalancer
+      nodes:
+      - addresses: { get_attr: [ hybris-servers, networks, private, 0 ]  }
+        port: 9001
+        condition: ENABLED
+      protocol: HTTP
+      halfClosed: False
+      algorithm: LEAST_CONNECTIONS
+      connectionThrottle:
+        maxConnections: 50
+        minConnections: 50
+        maxConnectionRate: 50
+        rateInterval: 50
+      port: 9001
+      timeout: 120
+      sessionPersistence: HTTP_COOKIE
+      virtualIps:
+      - type: SERVICENET
+        ipVersion: IPV4
+      healthMonitor:
+        type: HTTP
+        delay: 120
+        timeout: 10
+        attemptsBeforeDeactivation: 2
+        path: /hac
+        statusRegex: .*
+        bodyRegex: .*
+      contentCaching: ENABLED
+  hybris_database:
+    type: OS::Trove::Instance
+    properties:
+      name:
+        str_replace:
+          template: stack_Database
+          params:
+            stack: { get_param: "OS::stack_name" }
+      flavor: { get_param: database_flavor }
+      size: { get_param: database_disk }
+      datastore_type: mysql
+      databases:
+      - name: { get_param: db_name }
+      users:
+      - name: { get_param: db_user }
+        password: { get_attr: [database_pass, value] }
+        databases: [ { get_param: db_name } ]
+  web-servers:
+    depends_on: hybris_lb
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: web_server_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: web-hyb-%index%
+          flavor: { get_param: web_server_flavor }
+          image: RAS-web-hybris2
+  hybris-servers:
+    depends_on: hybris-admin-servers
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: hybris_server_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: hybris-%index%
+          flavor: { get_param: app_server_flavor }
+          image: RAS-hybris63-4
+          user_data: { get_resource: hybrisInitScript }
+  hybris-admin-servers:
+    depends_on: hybris_database
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: hybris_admin_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: admin-%index%
+          flavor: { get_param: app_server_flavor }
+          image: RAS-hybris63-4
+          user_data: { get_resource: hybrisAdminInitScript }
+  solr-master:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 1
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: solr-master-%index%
+          flavor: { get_param: solr_server_flavor }
+          image: RAS-solr-hybris
+  solr-slaves:
+    depends_on: solr-master
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param:  solr_slaves_server_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: solr-slave-%index%
+          flavor: { get_param: solr_server_flavor }
+          image: RAS-solr-hybris
+
+outputs:
+  web_servers_resources:
+    description: WEB Servers 
+    value: { get_attr:  [ web-servers, networks, private, 0 ]  }
+  admin-servers_resources:
+    description: ADMIN Servers
+    value: { get_attr: [ hybris-admin-servers, networks, private, 0 ]  }
+  hybris-servers_resources:
+    description: HYBRIS Servers
+    value: { get_attr: [ hybris-servers, networks, private, 0 ]  }
+  solr-master_resources:
+    description: SOLR-M Servers
+    value: { get_attr: [ solr-master, networks, private, 0]  }
+  solr-servers_resources:
+    description: SOLR-S Servers
+    value: { get_attr: [ hybris-servers, networks, private, 0]  }
+  mysql_user:
+    description: Database User
+    value: { get_param: db_user }
+  mysql_database:
+    description: Database Name
+    value: {get_param: db_name }
+  mysql_password:
+    description: Database Password
+    value:
+      get_attr: [database_pass, value]
+  mysql_host:
+    description: Database Host
+    value:
+      get_attr: [hybris_database, hostname]
+  lb_resources:
+    description: LB IPV4
+    value:
+      get_attr: [ hybris_lb, PublicIp ] 
