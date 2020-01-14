@@ -1,0 +1,2107 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "centos_7_asg.template - Autoscaling EC2 Instances with Rolling Updates and Notifications. **WARNING** This template creates one or more Amazon EC2  instances and an Elastic Load Balancer. You will be billed for the AWS resources used if you create a stack from this template.",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Parameters": [
+            "SecurityGroupList",
+            "Subnets"
+          ],
+          "Label": {
+            "default": "Network Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "Environment",
+            "ImageId",
+            "InstanceName",
+            "InstanceType",
+            "KeyName"
+          ],
+          "Label": {
+            "default": "Basic Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "BackupsEnabled",
+            "DetailedMonitoring",
+            "EBSOptimized",
+            "PlacementTenancy"
+          ],
+          "Label": {
+            "default": "Advanced Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "CWLogRetention",
+            "CustomCWConfig",
+            "EnableRackspaceTicket",
+            "ScalingNotificationTopic",
+            "TerminatedInstances"
+          ],
+          "Label": {
+            "default": "Monitoring Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "CustomSSMStepCount",
+            "CustomSSMSteps",
+            "PatchingGroupTag",
+            "SSMInventoryTag",
+            "SSMRefreshFrequency"
+          ],
+          "Label": {
+            "default": "SSM Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "EbsVolumeSize",
+            "EbsVolumeType",
+            "Iops"
+          ],
+          "Label": {
+            "default": "Primary EBS Volume properties"
+          }
+        },
+        {
+          "Parameters": [
+            "Ebs2VolumeSize",
+            "Ebs2VolumeType",
+            "EncryptEBSVolume",
+            "IopsVolume2"
+          ],
+          "Label": {
+            "default": "Secondary EBS Volume properties"
+          }
+        },
+        {
+          "Parameters": [
+            "EC2ScaleDownAdjustment",
+            "EC2ScaleDownCooldown",
+            "EC2ScaleUpAdjustment",
+            "EC2ScaleUpCooldown",
+            "HealthCheckGracePeriod",
+            "HealthCheckType",
+            "MinInstancesInService",
+            "ScalingCreateTimeOut",
+            "ScalingMax",
+            "ScalingMin",
+            "ScalingTermination",
+            "ScalingUpdateTimeOut"
+          ],
+          "Label": {
+            "default": "AutoScaling Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "LoadBalancerNames",
+            "TargetGroupARNs"
+          ],
+          "Label": {
+            "default": "Load Balancer Configuration (OPTIONAL)"
+          }
+        },
+        {
+          "Parameters": [
+            "CwHighEvaluations",
+            "CwHighOperator",
+            "CwHighPeriod",
+            "CwHighThreshold",
+            "CwLowEvaluations",
+            "CwLowOperator",
+            "CwLowPeriod",
+            "CwLowThreshold",
+            "CwScalingMetric"
+          ],
+          "Label": {
+            "default": "AutoScaling Alarm Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "InstanceRoleManagedPolicyArns"
+          ],
+          "Label": {
+            "default": "IAM Configuration"
+          }
+        }
+      ],
+      "ParameterLabels": {
+        "ScalingCreateTimeOut": {
+          "default": "Create Signal Timeout"
+        },
+        "CustomCWConfig": {
+          "default": "Custom Cloudwatch Parameters"
+        },
+        "CwLowOperator": {
+          "default": "Scale Down operator"
+        },
+        "CwLowThreshold": {
+          "default": "Scale Down period"
+        },
+        "SSMRefreshFrequency": {
+          "default": "SSM Association refresh rate"
+        },
+        "CwScalingMetric": {
+          "default": "ASG Scaling metric"
+        },
+        "EBSOptimized": {
+          "default": "Enable EBS Optimization"
+        },
+        "ScalingMin": {
+          "default": "Minimum Instances"
+        },
+        "CWLogRetention": {
+          "default": "Cloudwatch Log Retention"
+        },
+        "Ebs2VolumeSize": {
+          "default": "Secondary EBS Volume Size"
+        },
+        "CwHighPeriod": {
+          "default": "Scale Up period"
+        },
+        "SecurityGroupList": {
+          "default": "Security Groups"
+        },
+        "ImageId": {
+          "default": "Image ID"
+        },
+        "CwLowPeriod": {
+          "default": "Scale Down period"
+        },
+        "ScalingTermination": {
+          "default": "Termination Count"
+        },
+        "KeyName": {
+          "default": "Key Pair"
+        },
+        "PlacementTenancy": {
+          "default": "Tenancy"
+        },
+        "BackupsEnabled": {
+          "default": "Backup Tag value"
+        },
+        "HealthCheckGracePeriod": {
+          "default": "Health Check Period"
+        },
+        "InstanceType": {
+          "default": "Instance Type"
+        },
+        "Ebs2VolumeType": {
+          "default": "Secondary EBS Volume Type"
+        },
+        "CwHighOperator": {
+          "default": "Scale Up operator"
+        },
+        "TargetGroupARNs": {
+          "default": "Target Group ARNs"
+        },
+        "EbsVolumeSize": {
+          "default": "Primary EBS Volume Size"
+        },
+        "CustomSSMSteps": {
+          "default": "Custom Bootstrapping Steps"
+        },
+        "EC2ScaleUpAdjustment": {
+          "default": "Scale Up by"
+        },
+        "CwHighThreshold": {
+          "default": "Scale Up threshold"
+        },
+        "ScalingNotificationTopic": {
+          "default": "Scale Notification Topic"
+        },
+        "ScalingMax": {
+          "default": "Maximum Instances"
+        },
+        "InstanceName": {
+          "default": "Instance Name"
+        },
+        "IopsVolume2": {
+          "default": "Secondary EBS Volume IOPS"
+        },
+        "PatchingGroupTag": {
+          "default": "SSM Patching Group"
+        },
+        "EC2ScaleDownAdjustment": {
+          "default": "Scale Down by"
+        },
+        "CustomSSMStepCount": {
+          "default": "Number of Custom Bootstrapping Steps"
+        },
+        "ScalingUpdateTimeOut": {
+          "default": "Update Signal Timeout"
+        },
+        "MinInstancesInService": {
+          "default": "Min Instance in Service"
+        },
+        "SSMInventoryTag": {
+          "default": "Perform SSM Inventory?"
+        },
+        "TerminatedInstances": {
+          "default": "Number of Terminated Instances"
+        },
+        "HealthCheckType": {
+          "default": "Health Check Type"
+        },
+        "CwLowEvaluations": {
+          "default": "Scale Down evaluations"
+        },
+        "CwHighEvaluations": {
+          "default": "Scale Up evaluations"
+        },
+        "Iops": {
+          "default": "Primary EBS volume IOPS"
+        },
+        "DetailedMonitoring": {
+          "default": "Detailed Monitoring?"
+        },
+        "EbsVolumeType": {
+          "default": "Primary EBS Volume Type"
+        },
+        "EC2ScaleDownCooldown": {
+          "default": "Cooldown time after Scale Down"
+        },
+        "EC2ScaleUpCooldown": {
+          "default": "Cooldown time after Scale Up"
+        },
+        "LoadBalancerNames": {
+          "default": "CLB List"
+        },
+        "EncryptEBSVolume": {
+          "default": "Encrypt Secondary EBS Volume?"
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "ScalingCreateTimeOut": {
+      "Default": "20M",
+      "AllowedPattern": "^([0-9]+[HMS]){1,3}$",
+      "Type": "String",
+      "Description": "Time to wait for the number of signals equal to ScalingMin. H/M/S Hours/Minutes/Seconds",
+      "ConstraintDescription": "#H#M#S where each # is the number of hours or minutes or seconds"
+    },
+    "CustomCWConfig": {
+      "Default": "",
+      "Type": "String",
+      "Description": "The name of an existing parameter store object containing a custom cloudwatch configuration."
+    },
+    "CwLowOperator": {
+      "Default": "LessThanThreshold",
+      "Type": "String",
+      "Description": "Math operator used by CloudWatch for alarms and triggers.",
+      "AllowedValues": [
+        "GreaterThanOrEqualToThreshold",
+        "GreaterThanThreshold",
+        "LessThanThreshold",
+        "LessThanOrEqualToThreshold"
+      ]
+    },
+    "InstanceRoleManagedPolicyArns": {
+      "Default": "",
+      "Type": "String",
+      "Description": "A comma delimited list of IAM policy ARNs for the InstanceRole IAM role.  IAM ARNs can be found within the Policies section of the AWS IAM console."
+    },
+    "Environment": {
+      "Default": "Development",
+      "Type": "String",
+      "Description": "Application environment for which this network is being created. e.g. Development/Production.",
+      "AllowedValues": [
+        "Development",
+        "Integration",
+        "PreProduction",
+        "Production",
+        "QA",
+        "Staging",
+        "Test"
+      ]
+    },
+    "SSMRefreshFrequency": {
+      "AllowedPattern": "^$|^rate\\(\\d{1,2} (minutes|hours?|days?)\\)$|^cron\\((\\S+ ){5}\\S+\\)$",
+      "Default": "rate(1 day)",
+      "Type": "String",
+      "Description": "A cron or rate pattern to define the SSM Association refresh schedule, defaulting to once per day.  See https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-cron.html for more details.  Schedule can be disabled by providing an empty string.",
+      "ConstraintDescription": "Must provide a valid rate or cron statement.  For more details, See https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-cron.html "
+    },
+    "CwScalingMetric": {
+      "Default": "CPUUtilization",
+      "Type": "String",
+      "Description": "Select the metric to be used for scaling.",
+      "AllowedValues": [
+        "CPUUtilization",
+        "NetworkIn",
+        "NetworkOut"
+      ]
+    },
+    "EBSOptimized": {
+      "Default": "False",
+      "Type": "String",
+      "Description": "Use EBS Optimized.",
+      "AllowedValues": [
+        "False",
+        "True"
+      ]
+    },
+    "ScalingMin": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "1",
+      "Type": "String",
+      "Description": "The minimum size of the Auto Scaling group.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "CWLogRetention": {
+      "Default": "30",
+      "ConstraintDescription": "Must be a valid integer.",
+      "Type": "String",
+      "Description": "The number of days to retain Cloudwatch Logs for this instance.",
+      "AllowedValues": [
+        "1",
+        "3",
+        "5",
+        "7",
+        "14",
+        "30",
+        "60",
+        "90",
+        "120",
+        "150",
+        "180",
+        "365",
+        "400",
+        "545",
+        "731",
+        "1827",
+        "3653"
+      ]
+    },
+    "Ebs2VolumeSize": {
+      "AllowedPattern": "^[1-9][0-9]*$||^$",
+      "Default": "",
+      "Type": "String",
+      "Description": "Select Second EBS Volume Size in GB.",
+      "ConstraintDescription": "Must be a numeric value or empty string."
+    },
+    "EnableRackspaceTicket": {
+      "Default": "False",
+      "Type": "String",
+      "Description": "Specifies whether alarms will generate Rackspace tickets",
+      "AllowedValues": [
+        "False",
+        "True"
+      ]
+    },
+    "CwHighPeriod": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "60",
+      "Type": "String",
+      "Description": "Time the specified statistic is applied. Must be in seconds that is also a multiple of 60.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "Subnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Subnets for Application"
+    },
+    "SecurityGroupList": {
+      "Type": "List<AWS::EC2::SecurityGroup::Id>",
+      "Description": "A list of EC2 security groups to assign to this resource."
+    },
+    "EC2ScaleDownAdjustment": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "1",
+      "Type": "String",
+      "Description": "Number of EC2 instances to scale down by at a time.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "ImageId": {
+      "AllowedPattern": "^ami-[0-9a-f]+$||^$",
+      "Default": "",
+      "Type": "String",
+      "Description": "The image ID to be used to build the EC2 Instance.  (OPTIONAL) - If omitted, the instance(s) will be built from the AMI noted in template mapping."
+    },
+    "CwLowPeriod": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "300",
+      "Type": "String",
+      "Description": "Time the specified statistic is applied. Must be in seconds that is also a multiple of 60.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "ScalingTermination": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "1",
+      "Type": "String",
+      "Description": "The maximum number of instances that are terminated at a given time.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "KeyName": {
+      "ConstraintDescription": "Must be the name of an existing EC2 KeyPair.",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances."
+    },
+    "PlacementTenancy": {
+      "Default": "default",
+      "Type": "String",
+      "Description": "The placement tenancy for EC2 devices",
+      "AllowedValues": [
+        "dedicated",
+        "default",
+        "host"
+      ]
+    },
+    "BackupsEnabled": {
+      "Default": "False",
+      "Type": "String",
+      "Description": "Value of the 'Backup' tag, used to assign the EBSSnapper configuration."
+    },
+    "EC2ScaleDownCooldown": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "60",
+      "Type": "String",
+      "Description": "Time in seconds before any further trigger-related scaling can occur.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "InstanceType": {
+      "Default": "t2.micro",
+      "Type": "String",
+      "ConstraintDescription": "Must be a valid EC2 instance type. Default is t2.micro",
+      "Description": "Select instance type",
+      "AllowedValues": [
+        "t2.nano",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "t2.xlarge",
+        "t2.2xlarge",
+        "t3.nano",
+        "t3.micro",
+        "t3.small",
+        "t3.medium",
+        "t3.large",
+        "t3.xlarge",
+        "t3.2xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "m4.16xlarge",
+        "r3.large",
+        "r3.xlarge",
+        "r3.2xlarge",
+        "r3.4xlarge",
+        "r3.8xlarge",
+        "r4.large",
+        "r4.xlarge",
+        "r4.2xlarge",
+        "r4.4xlarge",
+        "r4.8xlarge",
+        "r4.16xlarge",
+        "r5.large",
+        "r5.xlarge",
+        "r5.2xlarge",
+        "r5.4xlarge",
+        "r5.12xlarge",
+        "r5.24xlarge",
+        "r5.metal",
+        "r5a.large",
+        "r5a.xlarge",
+        "r5a.2xlarge",
+        "r5a.4xlarge",
+        "r5a.12xlarge",
+        "r5a.24xlarge",
+        "r5d.large",
+        "r5d.xlarge",
+        "r5d.2xlarge",
+        "r5d.4xlarge",
+        "r5d.12xlarge",
+        "r5d.24xlarge",
+        "r5d.metal",
+        "x1.16xlarge",
+        "x1.32xlarge",
+        "i2.xlarge",
+        "i2.2xlarge",
+        "i2.4xlarge",
+        "i2.8xlarge",
+        "i3.large",
+        "i3.xlarge",
+        "i3.2xlarge",
+        "i3.4xlarge",
+        "i3.8xlarge",
+        "i3.16xlarge",
+        "i3.metal",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge",
+        "c5.large",
+        "c5.xlarge",
+        "c5.2xlarge",
+        "c5.4xlarge",
+        "c5.9xlarge",
+        "c5.18xlarge",
+        "c5d.large",
+        "c5d.xlarge",
+        "c5d.2xlarge",
+        "c5d.4xlarge",
+        "c5d.9xlarge",
+        "c5d.18xlarge",
+        "c5n.large",
+        "c5n.xlarge",
+        "c5n.2xlarge",
+        "c5n.4xlarge",
+        "c5n.9xlarge",
+        "c5n.18xlarge",
+        "g2.2xlarge",
+        "g2.8xlarge",
+        "g3.4xlarge",
+        "g3.8xlarge",
+        "g3.16xlarge",
+        "g3s.xlarge",
+        "p2.xlarge",
+        "p2.8xlarge",
+        "p2.16xlarge",
+        "p3.2xlarge",
+        "p3.8xlarge",
+        "p3.16xlarge",
+        "p3dn.24xlarge",
+        "d2.xlarge",
+        "d2.2xlarge",
+        "d2.4xlarge",
+        "d2.8xlarge",
+        "f1.2xlarge",
+        "f1.4xlarge",
+        "f1.16xlarge",
+        "m5.large",
+        "m5.xlarge",
+        "m5.2xlarge",
+        "m5.4xlarge",
+        "m5.12xlarge",
+        "m5.24xlarge",
+        "m5a.large",
+        "m5a.xlarge",
+        "m5a.2xlarge",
+        "m5a.4xlarge",
+        "m5a.12xlarge",
+        "m5a.24xlarge",
+        "m5d.large",
+        "m5d.xlarge",
+        "m5d.2xlarge",
+        "m5d.4xlarge",
+        "m5d.12xlarge",
+        "m5d.24xlarge",
+        "z1d.large",
+        "z1d.xlarge",
+        "z1d.2xlarge",
+        "z1d.3xlarge",
+        "z1d.6xlarge",
+        "z1d.12xlarge",
+        "u-6tb1.metal",
+        "u-9tb1.metal",
+        "u-12tb1.metal"
+      ]
+    },
+    "Ebs2VolumeType": {
+      "Default": "gp2",
+      "Type": "String",
+      "Description": "Select EBS Volume Type.",
+      "AllowedValues": [
+        "io1",
+        "standard",
+        "gp2"
+      ]
+    },
+    "TargetGroupARNs": {
+      "Default": "",
+      "Type": "CommaDelimitedList",
+      "Description": "A list of Amazon Resource Names (ARN) of target groups to associate with the Auto Scaling group."
+    },
+    "EbsVolumeSize": {
+      "AllowedPattern": "^[1-9][0-9]*$",
+      "Default": "60",
+      "Type": "String",
+      "Description": "Select EBS Volume Size in GB.",
+      "ConstraintDescription": "Must be a numeric value."
+    },
+    "CustomSSMSteps": {
+      "Default": "",
+      "Type": "CommaDelimitedList",
+      "Description": "A comma delimited list of up to 5 SSM document names (not URIs) to insert into the instance bootstrapping. (OPTIONAL)"
+    },
+    "EC2ScaleUpAdjustment": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "1",
+      "Type": "String",
+      "Description": "Number of EC2 instances to scale up by at a time.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "CwHighThreshold": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "60",
+      "Type": "String",
+      "Description": "The value against which the specified statistic is compared.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "ScalingNotificationTopic": {
+      "AllowedPattern": "^arn:aws:sns:(us|eu|ap|sa|ca)-(east|west|north|south|southeast|northeast|central)-[1-9]:[0-9]{12}:.+$||^$",
+      "Default": "",
+      "Type": "String",
+      "Description": "SNS Topic ARN to notify if there are any scaling operations. OPTIONAL",
+      "ConstraintDescription": "Must be a valid SNS ARN."
+    },
+    "CwLowThreshold": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "30",
+      "Type": "String",
+      "Description": "The value against which the specified statistic is compared.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "InstanceName": {
+      "ConstraintDescription": "Must follow normal syntax conventions.",
+      "Type": "String",
+      "Description": "EC2 Server Instance Name"
+    },
+    "EC2ScaleUpCooldown": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "60",
+      "Type": "String",
+      "Description": "Time in seconds before any further trigger-related scaling can occur.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "CustomSSMStepCount": {
+      "Default": "0",
+      "Type": "String",
+      "Description": "The number of SSM documents to insert into the instance bootstrapping.",
+      "AllowedValues": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "PatchingGroupTag": {
+      "Default": "",
+      "Type": "String",
+      "Description": "Group ID to be used by System Manager for Patching (OPTIONAL)"
+    },
+    "HealthCheckGracePeriod": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "300",
+      "Type": "String",
+      "Description": "Number of seconds grace during which no autoscaling actions will be taken.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "IopsVolume2": {
+      "Default": "0",
+      "Type": "Number",
+      "Description": "Iops value required for use with io1 on secondary EBS volumes. This value should be 3 times the secondary EBS volume size"
+    },
+    "ScalingUpdateTimeOut": {
+      "Default": "20M",
+      "AllowedPattern": "^([0-9]+[HMS]){1,3}$",
+      "Type": "String",
+      "Description": "Post update pause before additional Auto Scale resource changes. H/M/S Hours/Minutes/Seconds",
+      "ConstraintDescription": "#H#M#S where each # is the number of hours or minutes or seconds"
+    },
+    "MinInstancesInService": {
+      "Default": "0",
+      "Type": "Number",
+      "Description": "Specifies the minimum number of instances that must be in service within the Auto Scaling group while AWS CloudFormation updates old instances.  A value of 0 will ensure that at least the ASGs minimum instance count stays in service during all updates."
+    },
+    "SSMInventoryTag": {
+      "Default": "True",
+      "Type": "String",
+      "Description": "Determines whether Instance is tracked via System Manager Inventory.",
+      "AllowedValues": [
+        "False",
+        "True"
+      ]
+    },
+    "TerminatedInstances": {
+      "Default": "30",
+      "Type": "Number",
+      "Description": "Specifies the maximum number of instances that can be terminated in a six hour period without generating a Cloudwatch Alarm."
+    },
+    "HealthCheckType": {
+      "Default": "EC2",
+      "Type": "String",
+      "Description": "Define the type of healthcheck for the AutoScaling group.",
+      "AllowedValues": [
+        "EC2",
+        "ELB"
+      ]
+    },
+    "CwLowEvaluations": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "3",
+      "Type": "String",
+      "Description": "The number of periods over which data is compared to the specified threshold.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "CwHighEvaluations": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "3",
+      "Type": "String",
+      "Description": "The number of periods over which data is compared to the specified threshold.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "Iops": {
+      "Default": "0",
+      "Type": "Number",
+      "Description": "Iops value required for use with io1 EBS volumes. This value should be 3 times the EBS volume size"
+    },
+    "DetailedMonitoring": {
+      "Default": "True",
+      "Type": "String",
+      "Description": "Enable Detailed Monitoring.",
+      "AllowedValues": [
+        "False",
+        "True"
+      ]
+    },
+    "EbsVolumeType": {
+      "Default": "gp2",
+      "Type": "String",
+      "Description": "Select EBS Volume Type.",
+      "AllowedValues": [
+        "io1",
+        "standard",
+        "gp2"
+      ]
+    },
+    "ScalingMax": {
+      "AllowedPattern": "([0-9]+)",
+      "Default": "2",
+      "Type": "String",
+      "Description": "The maximum size of the Auto Scaling group.",
+      "ConstraintDescription": "Must be a valid integer."
+    },
+    "CwHighOperator": {
+      "Default": "GreaterThanThreshold",
+      "Type": "String",
+      "Description": "Math operator used by CloudWatch for alarms and triggers.",
+      "AllowedValues": [
+        "GreaterThanOrEqualToThreshold",
+        "GreaterThanThreshold",
+        "LessThanThreshold",
+        "LessThanOrEqualToThreshold"
+      ]
+    },
+    "LoadBalancerNames": {
+      "Default": "",
+      "Type": "CommaDelimitedList",
+      "Description": "A list of Classic load balancers associated with this Auto Scaling group."
+    },
+    "EncryptEBSVolume": {
+      "Default": "False",
+      "Type": "String",
+      "Description": "Specifies whether to encrypt the EBS volume.",
+      "AllowedValues": [
+        "False",
+        "True"
+      ]
+    }
+  },
+  "Conditions": {
+    "is2ndEBSVolume": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "Ebs2VolumeSize"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "isEBSEncrypted": {
+      "Fn::Equals": [
+        {
+          "Ref": "EncryptEBSVolume"
+        },
+        "True"
+      ]
+    },
+    "RackspaceAlarmsEnabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableRackspaceTicket"
+        },
+        "True"
+      ]
+    },
+    "IopsEnabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "EbsVolumeType"
+        },
+        "io1"
+      ]
+    },
+    "isMinInstance": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "MinInstancesInService"
+            },
+            "0"
+          ]
+        }
+      ]
+    },
+    "EnableCustomSSMStep2": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "CustomSSMStepCount"
+            },
+            "2"
+          ]
+        },
+        {
+          "Condition": "EnableCustomSSMStep3"
+        }
+      ]
+    },
+    "EnableCustomSSMStep1": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "CustomSSMStepCount"
+            },
+            "1"
+          ]
+        },
+        {
+          "Condition": "EnableCustomSSMStep2"
+        }
+      ]
+    },
+    "EnableCustomCWConfig": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "CustomCWConfig"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "InstanceRolePoliciesSet": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "InstanceRoleManagedPolicyArns"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "EnableCustomSSMStep4": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "CustomSSMStepCount"
+            },
+            "4"
+          ]
+        },
+        {
+          "Condition": "EnableCustomSSMStep5"
+        }
+      ]
+    },
+    "IopsEnabled2": {
+      "Fn::Equals": [
+        {
+          "Ref": "Ebs2VolumeType"
+        },
+        "io1"
+      ]
+    },
+    "EnableCustomSSMStep3": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "CustomSSMStepCount"
+            },
+            "3"
+          ]
+        },
+        {
+          "Condition": "EnableCustomSSMStep4"
+        }
+      ]
+    },
+    "EnableCustomSSMStep5": {
+      "Fn::Equals": [
+        {
+          "Ref": "CustomSSMStepCount"
+        },
+        5
+      ]
+    },
+    "SetSSMSchedule": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "SSMRefreshFrequency"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "isELBv2": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Select": [
+                "0",
+                {
+                  "Ref": "TargetGroupARNs"
+                }
+              ]
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "isImageId": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ImageId"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "isELBv1": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Select": [
+                "0",
+                {
+                  "Ref": "LoadBalancerNames"
+                }
+              ]
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "isScalingNotification": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ScalingNotificationTopic"
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "Mappings": {
+    "AWSRegionArch2AMI": {
+      "us-east-1": {
+        "64": "ami-9887c6e7"
+      },
+      "us-west-1": {
+        "64": "ami-4826c22b"
+      },
+      "eu-north-1": {
+        "64": "ami-b133bccf"
+      },
+      "ap-northeast-2": {
+        "64": "ami-bf9c36d1"
+      },
+      "ap-northeast-1": {
+        "64": "ami-8e8847f1"
+      },
+      "sa-east-1": {
+        "64": "ami-cb5803a7"
+      },
+      "ap-southeast-1": {
+        "64": "ami-8e0205f2"
+      },
+      "ca-central-1": {
+        "64": "ami-e802818c"
+      },
+      "ap-southeast-2": {
+        "64": "ami-d8c21dba"
+      },
+      "us-west-2": {
+        "64": "ami-3ecc8f46"
+      },
+      "us-east-2": {
+        "64": "ami-9c0638f9"
+      },
+      "ap-south-1": {
+        "64": "ami-1780a878"
+      },
+      "eu-central-1": {
+        "64": "ami-dd3c0f36"
+      },
+      "eu-west-1": {
+        "64": "ami-3548444c"
+      },
+      "eu-west-2": {
+        "64": "ami-00846a67"
+      },
+      "eu-west-3": {
+        "64": "ami-262e9f5b"
+      }
+    }
+  },
+  "Resources": {
+    "CWAgentParam": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Type": "String",
+        "Description": {
+          "Fn::Sub": "${AWS::StackName} Cloudwatch Agent configuration"
+        },
+        "Value": {
+          "Fn::Join": [
+            "",
+            [
+              "{\"metrics\": {\"append_dimensions\": {\"InstanceId\": \"${aws:InstanceId}\", \"AutoScalingGroupName\": \"${aws:AutoScalingGroupName}\"}, \"aggregation_dimensions\": [[\"InstanceId\"], [\"AutoScalingGroupName\"], [\"InstanceId\", \"device\"]], \"namespace\": \"System/Linux\", \"metrics_collected\": {\"mem\": {\"metrics_collection_interval\": 60, \"measurement\": [{\"rename\": \"MemoryUtilization\", \"name\": \"mem_used_percent\", \"unit\": \"Percent\"}]}, \"disk\": {\"ignore_file_system_types\": [\"devtmpfs\", \"tmpfs\", \"devfs\", \"rootfs\"], \"metrics_collection_interval\": 60, \"resources\": [\"*\"], \"measurement\": [\"used_percent\"]}}}, \"logs\": {\"logs_collected\": {\"files\": {\"collect_list\": [{\"file_path\": \"/var/log/cloud-init-output.log\", \"log_group_name\": \"",
+              {
+                "Ref": "SystemLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/cloud-init-output.log\"}, {\"timestamp_format\": \"%b %d %H:%M:%S\", \"file_path\": \"/var/log/cloud-init.log\", \"log_group_name\": \"",
+              {
+                "Ref": "SystemLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/cloud-init.log\"}, {\"timestamp_format\": \"%Y-%m-%d %H:%M:%S\", \"multi_line_start_pattern\": \"{timestamp_format}\", \"file_path\": \"/var/log/amazon/ssm/amazon-ssm-agent.log\", \"log_group_name\": \"",
+              {
+                "Ref": "SystemLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/amazon-ssm-agent.log\"}, {\"timestamp_format\": \"%Y-%m-%d %H:%M:%S\", \"multi_line_start_pattern\": \"{timestamp_format}\", \"file_path\": \"/var/log/amazon/ssm/errors.log\", \"log_group_name\": \"",
+              {
+                "Ref": "SystemLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/amazon-ssm-errors.log\"}, {\"timestamp_format\": \"%d/%b/%Y:%H:%M:%S\", \"file_path\": \"/var/log/httpd/access*\", \"log_group_name\": \"",
+              {
+                "Ref": "ApplicationLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/httpd-access\"}, {\"timestamp_format\": \"%d/%b/%Y:%H:%M:%S\", \"file_path\": \"/var/log/httpd/error*\", \"log_group_name\": \"",
+              {
+                "Ref": "ApplicationLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/httpd-error\"}, {\"timestamp_format\": \"%d/%b/%Y:%H:%M:%S\", \"file_path\": \"/var/log/apache2/access*\", \"log_group_name\": \"",
+              {
+                "Ref": "ApplicationLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/apache2-access\"}, {\"timestamp_format\": \"%d/%b/%Y:%H:%M:%S\", \"file_path\": \"/var/log/apache2/error*\", \"log_group_name\": \"",
+              {
+                "Ref": "ApplicationLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/apache2-error\"}, {\"timestamp_format\": \"%d/%b/%Y:%H:%M:%S\", \"file_path\": \"/var/log/nginx/access*\", \"log_group_name\": \"",
+              {
+                "Ref": "ApplicationLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/nginx-access\"}, {\"timestamp_format\": \"%d/%b/%Y:%H:%M:%S\", \"file_path\": \"/var/log/nginx/error*\", \"log_group_name\": \"",
+              {
+                "Ref": "ApplicationLogs"
+              },
+              "\", \"log_stream_name\": \"{instance_id}/nginx-error\"}]}}}}\n"
+            ]
+          ]
+        },
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-CWAgent"
+        }
+      }
+    },
+    "SSMDocument": {
+      "Type": "AWS::SSM::Document",
+      "Properties": {
+        "Content": {
+          "schemaVersion": "2.2",
+          "description": "SSM Document for instance configuration.",
+          "parameters": {},
+          "mainSteps": [
+            {
+              "action": "aws:runShellScript",
+              "inputs": {
+                "runCommand": [
+                  "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do",
+                  "  sleep 10",
+                  "  echo cloud-init not yet complete",
+                  "done",
+                  "echo cloud-init completed"
+                ]
+              },
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Linux"
+                ]
+              },
+              "name": "WaitForCloudInit"
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": "AWS-ConfigureAWSPackage",
+                "documentParameters": {
+                  "action": "Install",
+                  "name": "AmazonCloudWatchAgent"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "InstallCWAgent",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": "AmazonCloudWatch-ManageAgent",
+                "documentParameters": {
+                  "action": "configure",
+                  "optionalConfigurationSource": "ssm",
+                  "optionalConfigurationLocation": {
+                    "Fn::If": [
+                      "EnableCustomCWConfig",
+                      {
+                        "Ref": "CustomCWConfig"
+                      },
+                      {
+                        "Ref": "CWAgentParam"
+                      }
+                    ]
+                  },
+                  "optionalRestart": "yes",
+                  "name": "AmazonCloudWatchAgent"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "ConfigureCWAgent",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": {
+                  "Fn::Sub": "arn:aws:ssm:${AWS::Region}:507897595701:document/Rack-ConfigureAWSTimeSync"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "SetupTimeSync",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": {
+                  "Fn::Sub": "arn:aws:ssm:${AWS::Region}:507897595701:document/Rack-Install_ScaleFT"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "SetupPassport",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": {
+                  "Fn::Sub": "arn:aws:ssm:${AWS::Region}:507897595701:document/Rack-Install_Package"
+                },
+                "documentParameters": {
+                  "Packages": "sysstat ltrace strace lsof iotop iptraf-ng tcpdump"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "DiagnosticTools",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": {
+                  "Fn::Sub": "arn:aws:ssm:${AWS::Region}:507897595701:document/Rack-PermissiveSELinux"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "PermissiveSELinux",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": {
+                  "Fn::Sub": "arn:aws:ssm:${AWS::Region}:507897595701:document/Rack-DisableFirewallD-RHELCENTOS7"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "DisableFirewallD",
+              "timeoutSeconds": 300
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": {
+                  "Fn::Sub": "arn:aws:ssm:${AWS::Region}:507897595701:document/Rack-SetMotd"
+                },
+                "documentType": "SSMDocument"
+              },
+              "name": "SetMotd",
+              "timeoutSeconds": 300
+            },
+            {
+              "Fn::If": [
+                "EnableCustomSSMStep1",
+                {
+                  "action": "aws:runDocument",
+                  "inputs": {
+                    "documentPath": {
+                      "Fn::Select": [
+                        "0",
+                        {
+                          "Ref": "CustomSSMSteps"
+                        }
+                      ]
+                    },
+                    "documentType": "SSMDocument"
+                  },
+                  "name": "CustomStep1",
+                  "timeoutSeconds": 300
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "EnableCustomSSMStep2",
+                {
+                  "action": "aws:runDocument",
+                  "inputs": {
+                    "documentPath": {
+                      "Fn::Select": [
+                        "1",
+                        {
+                          "Ref": "CustomSSMSteps"
+                        }
+                      ]
+                    },
+                    "documentType": "SSMDocument"
+                  },
+                  "name": "CustomStep2",
+                  "timeoutSeconds": 300
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "EnableCustomSSMStep3",
+                {
+                  "action": "aws:runDocument",
+                  "inputs": {
+                    "documentPath": {
+                      "Fn::Select": [
+                        "2",
+                        {
+                          "Ref": "CustomSSMSteps"
+                        }
+                      ]
+                    },
+                    "documentType": "SSMDocument"
+                  },
+                  "name": "CustomStep3",
+                  "timeoutSeconds": 300
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "EnableCustomSSMStep4",
+                {
+                  "action": "aws:runDocument",
+                  "inputs": {
+                    "documentPath": {
+                      "Fn::Select": [
+                        "3",
+                        {
+                          "Ref": "CustomSSMSteps"
+                        }
+                      ]
+                    },
+                    "documentType": "SSMDocument"
+                  },
+                  "name": "CustomStep4",
+                  "timeoutSeconds": 300
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "EnableCustomSSMStep5",
+                {
+                  "action": "aws:runDocument",
+                  "inputs": {
+                    "documentPath": {
+                      "Fn::Select": [
+                        "4",
+                        {
+                          "Ref": "CustomSSMSteps"
+                        }
+                      ]
+                    },
+                    "documentType": "SSMDocument"
+                  },
+                  "name": "CustomStep5",
+                  "timeoutSeconds": 300
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "action": "aws:runShellScript",
+              "inputs": {
+                "runCommand": [
+                  {
+                    "Fn::Sub": "/opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScaleGrp --region ${AWS::Region} || exit 0"
+                  }
+                ]
+              },
+              "precondition": {
+                "StringEquals": [
+                  "platformType",
+                  "Linux"
+                ]
+              },
+              "name": "SignalStack"
+            },
+            {
+              "action": "aws:runDocument",
+              "inputs": {
+                "documentPath": "AWS-UpdateSSMAgent",
+                "documentType": "SSMDocument"
+              },
+              "name": "UpdateSSMAgent",
+              "timeoutSeconds": 300
+            }
+          ]
+        },
+        "DocumentType": "Command"
+      }
+    },
+    "SystemLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": {
+          "Ref": "CWLogRetention"
+        }
+      }
+    },
+    "EC2ScaleUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "ScalingAdjustment": {
+          "Ref": "EC2ScaleUpAdjustment"
+        },
+        "AutoScalingGroupName": {
+          "Ref": "AutoScaleGrp"
+        },
+        "Cooldown": {
+          "Ref": "EC2ScaleUpCooldown"
+        },
+        "AdjustmentType": "ChangeInCapacity"
+      }
+    },
+    "LaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                "exec 1> >(logger -s -t $(basename $0)) 2>&1\n",
+                "\n",
+                "# Helper function\n",
+                "function exit_cfn_signal {\n",
+                "  exit_status=$?\n",
+                "  if [[ $exit_status != \"0\" && -e /opt/aws/bin/cfn-signal ]]; then\n",
+                "    /opt/aws/bin/cfn-signal -e $exit_status --stack ",
+                {
+                  "Ref": "AWS::StackName"
+                },
+                " --resource AutoScaleGrp --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\n",
+                "  fi\n",
+                "  exit $exit_status\n",
+                "}\n",
+                "trap exit_cfn_signal TERM EXIT\n",
+                "\n",
+                "mkdir -p /opt/aws/bin\n",
+                "cd /opt/aws\n",
+                "curl https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -o /tmp/epel-release-latest-7.noarch.rpm\n",
+                "rpm -qa | grep -q epel-release || yum install -y /tmp/epel-release-latest-7.noarch.rpm\n",
+                "yum install -y python-pip python34 python-daemon python-urllib3 python-requests\n",
+                "pip install --upgrade awscli pystache argparse\n",
+                "curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz -o /opt/aws/aws-cfn-bootstrap-latest.tar.gz\n",
+                "tar -xvpf aws-cfn-bootstrap-latest.tar.gz && cd aws-cfn-bootstrap-*/ && python setup.py build && python setup.py install\n",
+                "ln -sf /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup\n",
+                "chmod 775 /usr/init/redhat/cfn-hup\n",
+                "ln -sf /usr/bin/cfn-hup /opt/aws/bin/cfn-hup\n",
+                "ln -sf /usr/bin/cfn-init /opt/aws/bin/cfn-init\n",
+                "ln -sf /usr/bin/cfn-signal /opt/aws/bin/cfn-signal\n",
+                "ln -sf /usr/bin/cfn-get-metadata /opt/aws/bin/cfn-get-metadata\n",
+                "ln -sf /usr/bin/cfn-send-cmd-event /opt/aws/bin/cfn-send-cmd-event\n",
+                "ln -sf /usr/bin/cfn-send-cmd-result /opt/aws/bin/cfn-send-cmd-result\n",
+                "ssm_running=$( ps -ef | grep [a]mazon-ssm-agent | wc -l )\n",
+                "if [[ $ssm_running != \"0\" ]]; then\n",
+                "    echo -e \"amazon-ssm-agent already running\"\n",
+                "    exit 0\n",
+                "else\n",
+                "    if [[ -r \"/tmp/ssm_agent_install\" ]]; then : ;\n",
+                "    else mkdir -p /tmp/ssm_agent_install; fi\n",
+                "    curl https://s3.",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ".amazonaws.com/amazon-ssm-",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "/latest/linux_amd64/amazon-ssm-agent.rpm -o /tmp/ssm_agent_install/amazon-ssm-agent.rpm\n",
+                "    rpm -Uvh /tmp/ssm_agent_install/amazon-ssm-agent.rpm\n",
+                "    ssm_running=$( ps -ef | grep [a]mazon-ssm-agent | wc -l )\n",
+                "    systemctl=$( command -v systemctl | wc -l )\n",
+                "    if [[ $systemctl != \"0\" ]]; then\n",
+                "        systemctl enable amazon-ssm-agent\n",
+                "        if [[ $ssm_running == \"0\" ]]; then\n",
+                "            systemctl start amazon-ssm-agent\n",
+                "        fi\n",
+                "    else\n",
+                "        if [[ $ssm_running == \"0\" ]]; then\n",
+                "            start amazon-ssm-agent\n",
+                "        fi\n",
+                "    fi\n",
+                "fi\n"
+              ]
+            ]
+          }
+        },
+        "InstanceMonitoring": {
+          "Ref": "DetailedMonitoring"
+        },
+        "ImageId": {
+          "Fn::If": [
+            "isImageId",
+            {
+              "Ref": "ImageId"
+            },
+            {
+              "Fn::FindInMap": [
+                "AWSRegionArch2AMI",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "64"
+              ]
+            }
+          ]
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sda1",
+            "Ebs": {
+              "Iops": {
+                "Fn::If": [
+                  "IopsEnabled",
+                  {
+                    "Ref": "Iops"
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              "DeleteOnTermination": "true",
+              "VolumeType": {
+                "Ref": "EbsVolumeType"
+              },
+              "VolumeSize": {
+                "Ref": "EbsVolumeSize"
+              }
+            }
+          },
+          {
+            "Fn::If": [
+              "is2ndEBSVolume",
+              {
+                "DeviceName": "/dev/sdf",
+                "Ebs": {
+                  "Encrypted": {
+                    "Fn::If": [
+                      "isEBSEncrypted",
+                      "true",
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  },
+                  "DeleteOnTermination": "true",
+                  "VolumeType": {
+                    "Ref": "Ebs2VolumeType"
+                  },
+                  "VolumeSize": {
+                    "Ref": "Ebs2VolumeSize"
+                  },
+                  "Iops": {
+                    "Fn::If": [
+                      "IopsEnabled2",
+                      {
+                        "Ref": "IopsVolume2"
+                      },
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroups": {
+          "Ref": "SecurityGroupList"
+        },
+        "PlacementTenancy": {
+          "Ref": "PlacementTenancy"
+        },
+        "EbsOptimized": {
+          "Ref": "EBSOptimized"
+        },
+        "IamInstanceProfile": {
+          "Ref": "InstanceRoleInstanceProfile"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    },
+    "InstanceRoleInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Path": "/",
+        "ManagedPolicyArns": {
+          "Fn::Split": [
+            ",",
+            {
+              "Fn::Join": [
+                ",",
+                [
+                  "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
+                  {
+                    "Fn::If": [
+                      "InstanceRolePoliciesSet",
+                      {
+                        "Ref": "InstanceRoleManagedPolicyArns"
+                      },
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "AutoScaleGrp": {
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Count": {
+            "Ref": "ScalingMin"
+          },
+          "Timeout": {
+            "Fn::Sub": "PT${ScalingCreateTimeOut}"
+          }
+        }
+      },
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "PauseTime": {
+            "Fn::Sub": "PT${ScalingUpdateTimeOut}"
+          },
+          "WaitOnResourceSignals": "true",
+          "SuspendProcesses": [
+            "ScheduledActions",
+            "ReplaceUnhealthy",
+            "AlarmNotification",
+            "AZRebalance"
+          ],
+          "MaxBatchSize": {
+            "Ref": "ScalingTermination"
+          },
+          "MinInstancesInService": {
+            "Fn::If": [
+              "isMinInstance",
+              {
+                "Ref": "MinInstancesInService"
+              },
+              {
+                "Ref": "ScalingMin"
+              }
+            ]
+          }
+        }
+      },
+      "Properties": {
+        "HealthCheckGracePeriod": {
+          "Ref": "HealthCheckGracePeriod"
+        },
+        "NotificationConfigurations": [
+          {
+            "Fn::If": [
+              "isScalingNotification",
+              {
+                "NotificationTypes": [
+                  "autoscaling:EC2_INSTANCE_LAUNCH",
+                  "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                  "autoscaling:EC2_INSTANCE_TERMINATE",
+                  "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                ],
+                "TopicARN": {
+                  "Ref": "ScalingNotificationTopic"
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          },
+          {
+            "NotificationTypes": [
+              "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+              "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+            ],
+            "TopicARN": {
+              "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:rackspace-support-emergency"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "PropagateAtLaunch": "true",
+            "Value": {
+              "Ref": "BackupsEnabled"
+            },
+            "Key": "Backup"
+          },
+          {
+            "PropagateAtLaunch": "true",
+            "Value": {
+              "Ref": "Environment"
+            },
+            "Key": "Environment"
+          },
+          {
+            "PropagateAtLaunch": "true",
+            "Value": {
+              "Ref": "InstanceName"
+            },
+            "Key": "Name"
+          },
+          {
+            "PropagateAtLaunch": "true",
+            "Value": {
+              "Ref": "PatchingGroupTag"
+            },
+            "Key": "Patch Group"
+          },
+          {
+            "PropagateAtLaunch": "true",
+            "Value": {
+              "Ref": "SSMInventoryTag"
+            },
+            "Key": "SSMInventory"
+          },
+          {
+            "PropagateAtLaunch": "true",
+            "Value": "Rackspace",
+            "Key": "ServiceProvider"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfig"
+        },
+        "MinSize": {
+          "Ref": "ScalingMin"
+        },
+        "MaxSize": {
+          "Ref": "ScalingMax"
+        },
+        "VPCZoneIdentifier": {
+          "Ref": "Subnets"
+        },
+        "LoadBalancerNames": {
+          "Fn::If": [
+            "isELBv1",
+            {
+              "Ref": "LoadBalancerNames"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "MetricsCollection": [
+          {
+            "Granularity": "1Minute"
+          }
+        ],
+        "TargetGroupARNs": {
+          "Fn::If": [
+            "isELBv2",
+            {
+              "Ref": "TargetGroupARNs"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "HealthCheckType": {
+          "Ref": "HealthCheckType"
+        }
+      }
+    },
+    "InstanceRolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "InstanceRole",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "cloudformation:Describe*"
+              ],
+              "Resource": "*",
+              "Effect": "Allow"
+            },
+            {
+              "Action": [
+                "ssm:CreateAssociation",
+                "ssm:DescribeInstanceInformation"
+              ],
+              "Resource": "*",
+              "Effect": "Allow"
+            },
+            {
+              "Action": [
+                "cloudwatch:PutMetricData",
+                "cloudwatch:GetMetricStatistics",
+                "cloudwatch:ListMetrics",
+                "logs:CreateLogStream",
+                "ec2:DescribeTags",
+                "logs:DescribeLogStreams",
+                "logs:CreateLogGroup",
+                "logs:PutLogEvents",
+                "ssm:GetParameter"
+              ],
+              "Resource": "*",
+              "Effect": "Allow"
+            },
+            {
+              "Action": [
+                "ec2:DescribeTags"
+              ],
+              "Resource": "*",
+              "Effect": "Allow"
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "ScaleAlarmHigh": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": {
+          "Ref": "CwHighEvaluations"
+        },
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "AutoScaleGrp"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "EC2ScaleUpPolicy"
+          }
+        ],
+        "AlarmDescription": {
+          "Fn::Sub": "Scale-up if ${CwScalingMetric} ${CwHighOperator} ${CwHighThreshold}% for ${CwHighPeriod} seconds ${CwHighEvaluations} times."
+        },
+        "Namespace": "AWS/EC2",
+        "Period": {
+          "Ref": "CwHighPeriod"
+        },
+        "ComparisonOperator": {
+          "Ref": "CwHighOperator"
+        },
+        "Statistic": "Average",
+        "Threshold": {
+          "Ref": "CwHighThreshold"
+        },
+        "MetricName": {
+          "Ref": "CwScalingMetric"
+        }
+      }
+    },
+    "EC2ScaleDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "ScalingAdjustment": {
+          "Fn::Sub": "-${EC2ScaleDownAdjustment}"
+        },
+        "AutoScalingGroupName": {
+          "Ref": "AutoScaleGrp"
+        },
+        "Cooldown": {
+          "Ref": "EC2ScaleDownCooldown"
+        },
+        "AdjustmentType": "ChangeInCapacity"
+      }
+    },
+    "SSMAssociation": {
+      "Type": "AWS::SSM::Association",
+      "Properties": {
+        "ScheduleExpression": {
+          "Fn::If": [
+            "SetSSMSchedule",
+            {
+              "Ref": "SSMRefreshFrequency"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "Targets": [
+          {
+            "Values": [
+              {
+                "Ref": "AWS::StackId"
+              }
+            ],
+            "Key": "tag:aws:cloudformation:stack-id"
+          }
+        ],
+        "Name": {
+          "Ref": "SSMDocument"
+        }
+      }
+    },
+    "ScaleAlarmLow": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": {
+          "Ref": "CwLowEvaluations"
+        },
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "AutoScaleGrp"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "EC2ScaleDownPolicy"
+          }
+        ],
+        "AlarmDescription": {
+          "Fn::Sub": "Scale-down if ${CwScalingMetric} ${CwLowOperator} ${CwLowThreshold}% for ${CwLowPeriod} seconds ${CwLowEvaluations} times."
+        },
+        "Namespace": "AWS/EC2",
+        "Period": {
+          "Ref": "CwLowPeriod"
+        },
+        "ComparisonOperator": {
+          "Ref": "CwLowOperator"
+        },
+        "Statistic": "Average",
+        "Threshold": {
+          "Ref": "CwLowThreshold"
+        },
+        "MetricName": {
+          "Ref": "CwScalingMetric"
+        }
+      }
+    },
+    "GroupTerminatingInstances": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": {
+              "Ref": "AutoScaleGrp"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Fn::If": [
+              "RackspaceAlarmsEnabled",
+              {
+                "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:rackspace-support-emergency"
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "Threshold": {
+          "Ref": "TerminatedInstances"
+        },
+        "AlarmDescription": {
+          "Fn::Sub": "Over ${TerminatedInstances} instances terminated in last 6 hours, generating ticket to investigate."
+        },
+        "Namespace": "AWS/AutoScaling",
+        "Period": "21600",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Statistic": "Sum",
+        "TreatMissingData": "ignore",
+        "OKActions": [
+          {
+            "Fn::If": [
+              "RackspaceAlarmsEnabled",
+              {
+                "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:rackspace-support-emergency"
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "Unit": "Count",
+        "MetricName": "GroupTerminatingInstances"
+      }
+    },
+    "ApplicationLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": {
+          "Ref": "CWLogRetention"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "GroupName": {
+      "Description": "Autoscale Group Name",
+      "Value": {
+        "Ref": "AutoScaleGrp"
+      }
+    }
+  }
+}

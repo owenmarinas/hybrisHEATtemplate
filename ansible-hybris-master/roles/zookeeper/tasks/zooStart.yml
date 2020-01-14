@@ -1,0 +1,16 @@
+---
+
+  - name: Stop Zookeeper
+    command:
+      /opt/zookeeper/bin/zkServer.sh stop
+    args:
+      chdir: /opt/zookeeper
+    when: zkConfig.changed or zkID.changed
+    register: zkStop
+
+  - name: Start Zookeeper
+    command:
+      /opt/zookeeper/bin/zkServer.sh start zoo.cfg
+    args:
+      chdir: /opt/zookeeper
+    when: zkConfig.changed or zkID.changed or zkStop.changed

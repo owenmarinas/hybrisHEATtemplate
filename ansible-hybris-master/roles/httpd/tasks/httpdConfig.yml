@@ -1,0 +1,53 @@
+---
+
+  - name: Link Hybris Host
+    lineinfile:
+      dest: /etc/hosts
+      state: present
+      line: "{{ appIP }} app"
+
+  - name: Create Certificate Directory
+    file:
+      path: /etc/httpd/certs
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: SSL Certificate
+    copy:
+      src: apache.crt
+      dest: /etc/httpd/certs/apache.crt
+      owner: root
+      group: root
+      mode: 0655
+
+  - name: SSL Key
+    copy:
+      src: apache.key
+      dest: /etc/httpd/certs/apache.key
+      owner: root
+      group: root
+      mode: 0655
+
+  - include: httpdSingleSite.yml
+    when: not ManyMany or "{{ ManyMany }}" == False
+
+  - include: httpdManySite.yml
+    when: ManyMany or "{{ ManyMany }}" == True
+
+  - name: Configure IPTables
+    template:
+      backup: yes
+      src: iptables
+      owner: root
+      group: root
+      dest: "/etc/sysconfig/iptables"
+    register: httpTables
+
+  - name: IPTables Restart
+    service:
+      name: iptables
+      state: restarted
+      enabled: yes
+    when: httpTables.changed

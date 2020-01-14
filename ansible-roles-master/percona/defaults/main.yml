@@ -1,0 +1,36 @@
+---
+mysql_default_user: example
+mysql_default_user_password: example
+mysql_default_database: example
+
+mysql_users: [
+  {
+    name: '{{ mysql_default_user }}',
+    password: '{{ mysql_default_user_password }}',
+    privs: '{{ mysql_default_database }}.*:ALL',
+    hosts: ['%']
+  }
+]
+
+mysql_dbs: [
+  '{{ mysql_default_database }}'
+] 
+hosts: ['%']
+mysql_root_password: 'P@$$w0rd'
+mysql_host_ip: '127.0.0.1'
+mysql_root_user: 'root'
+mysql_max_allowed_packet: 256M
+mysql_max_connections: 750
+mysql_datadir: /var/lib/mysql
+mysql_tmpdir: /var/lib/mysqltmp
+mysql_logdir: /var/lib/mysqllogs
+mysql_socket: /var/lib/mysql/mysql.sock
+mysql_query_cache_type: 1
+mysql_query_cache_size: 128M
+mysql_query_cache_limit: 4M
+mysql_innodb_lock_wait_timeout: 1800
+mysql_innodb_buffer_pool_size: 500M
+mysql_key_buffer_size: 512M
+mysql_myisam_sort_buffer_size: 128M
+mysql_tmp_table_size: 256M
+mysql_max_heap_table_size: 256M

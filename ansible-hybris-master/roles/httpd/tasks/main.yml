@@ -1,0 +1,8 @@
+---
+- include: httpd24Install.yml
+  when: "{{ httpdVersion == 24 }}"
+
+- include: httpdInstall.yml
+  when: "{{ httpdVersion != 24 }}"
+
+- include: httpdConfig.yml

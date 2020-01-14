@@ -1,0 +1,48 @@
+---
+
+  - name: Configure Solr-Cloud
+    template:
+      backup: no
+      src: solr.in.sh
+      owner: root
+      group: root
+      dest: "/etc/default/solr.in.sh"
+    register: solrIn
+    when: cloud
+
+  - name: Non-Cloud Default Collection
+    unarchive:
+      copy: yes
+      src: "{{ solrCollection }}"
+      dest: /opt/solr/server/solr/configsets/
+      owner: solr
+      group: solr
+    register: defCollection
+    when: not cloud
+
+  - name: Non-Cloud Config Template
+    template:
+      src: solrconfig.xml
+      dest: /opt/solr/server/solr/configsets/default/conf/solrconfig.xml
+    register: solrConfig
+    when: not cloud
+
+  - name: Configure IPTables
+    lineinfile:
+      dest: /etc/sysconfig/iptables
+      state: present
+      insertafter: "^.*INPUT.*tcp.*22.*ACCEPT" 
+      line: "-A INPUT -s {{ hostvars[item]['ansible_eth0']['ipv4']['address'] }} -i eth0 -p tcp -m tcp --dport {{ solrPort | default(8983) }} -m comment --comment \"Solr Client Port\" -j ACCEPT"
+    with_items: "{{ groups['hybris'] }}"
+    become: yes
+    when: solrDir.stat.exists == False or solrIn is defined
+    register: solrTables
+## make this conditional better ##
+
+
+  - name: IPTables Restart
+    service:
+      name: iptables
+      state: restarted
+      enabled: yes
+    when: solrTables.changed

@@ -1,0 +1,40 @@
+---
+
+  #- name: Install fail2ban
+    #yum:
+      #name: fail2ban
+      #state: installed
+    #register: fail2ban
+    #become: True
+
+  - name: Install fail2ban (independent)
+    package:
+      name: fail2ban
+      state: latest
+    register: fail2ban
+
+  - name: fail2ban Service
+    service:
+      name: fail2ban
+      state: started
+      enabled: yes
+    when: fail2ban.changed
+    become: True
+
+  - name: SSHd Config
+    copy:
+      src: sshd_config
+      dest: /etc/ssh/sshd_config
+      owner: root
+      group: root
+      mode: 0655
+    register: sshdConfig
+    become: True
+
+  - name: SSHd Restart
+    service:
+      name: sshd
+      state: restarted
+      enabled: yes
+    when: sshdConfig.changed
+    become: True

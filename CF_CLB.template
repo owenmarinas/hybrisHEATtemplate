@@ -1,0 +1,1280 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CLB.template - Elastic Load Balancer version 1 (Classic) Template.",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Parameters": [
+            "CrossZone",
+            "LoadBalancerName",
+            "Scheme",
+            "SecurityGroupList",
+            "Subnets",
+            "TimeOut"
+          ],
+          "Label": {
+            "default": [
+              "CLB GENERAL CONFIGURATION:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "ASGTargets",
+            "Instances"
+          ],
+          "Label": {
+            "default": [
+              "TARGETS CONFIGURATION:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "ConnectionDrainingTimeout",
+            "HealthInterval",
+            "HealthTarget",
+            "HealthTimeout",
+            "HealthyThreshold",
+            "UnHealthyThreshold"
+          ],
+          "Label": {
+            "default": [
+              "TARGET HEALTH MONITORING CONFIGURATION:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "AppCookieName",
+            "CookieExpirationPeriod"
+          ],
+          "Label": {
+            "default": [
+              "Load Balancer Sticky Session configuration:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "EnableListener1",
+            "InstancePort1",
+            "InstanceProtocol1",
+            "LoadBalancerPort1",
+            "LoadBalancerProtocol1"
+          ],
+          "Label": {
+            "default": [
+              "LISTENER 1 CONFIGURATION:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "EnableListener2",
+            "InstancePort2",
+            "InstanceProtocol2",
+            "LoadBalancerPort2",
+            "LoadBalancerProtocol2"
+          ],
+          "Label": {
+            "default": [
+              "LISTENER 2 CONFIGURATION:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "SSLIdCert"
+          ],
+          "Label": {
+            "default": [
+              "SSL CONFIGURATION:"
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "CreateLoggingBucket",
+            "LogAccessControl",
+            "LogRetention",
+            "S3BucketName",
+            "S3BucketPrefix"
+          ],
+          "Label": {
+            "default": [
+              "S3 Logging Configuration (OPTIONAL)."
+            ]
+          }
+        },
+        {
+          "Parameters": [
+            "InternalRecordName",
+            "InternalZoneId",
+            "InternalZoneName"
+          ],
+          "Label": {
+            "default": "Internal DNS Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "Environment"
+          ],
+          "Label": {
+            "default": "Basic Configuration"
+          }
+        },
+        {
+          "Parameters": [
+            "EnableRackspaceTicket"
+          ],
+          "Label": {
+            "default": "Monitoring Configuration"
+          }
+        }
+      ],
+      "ParameterLabels": {
+        "SecurityGroupList": {
+          "default": "Security Groups"
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "InternalRecordName": {
+      "Default": "",
+      "Type": "String",
+      "Description": "Record Name for the new Resource Record in the Internal Hosted Zone"
+    },
+    "Environment": {
+      "Default": "Development",
+      "Type": "String",
+      "Description": "Application environment for which this network is being created. e.g. Development/Production.",
+      "AllowedValues": [
+        "Development",
+        "Integration",
+        "PreProduction",
+        "Production",
+        "QA",
+        "Staging",
+        "Test"
+      ]
+    },
+    "LoadBalancerPort1": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "80",
+      "Type": "String",
+      "Description": "Specifies the external load balancer port number.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "ConnectionDrainingTimeout": {
+      "Default": "0",
+      "MinValue": "0",
+      "Type": "Number",
+      "Description": "Set the timeout value for elastic loadbalancer draining policy if desired. OPTIONAL",
+      "MaxValue": "3600"
+    },
+    "LoadBalancerProtocol2": {
+      "Default": "HTTPS",
+      "Type": "String",
+      "Description": "Specifies the protocol to use for the Load Balancer HTTP / HTTPS / TCP / SSL.",
+      "AllowedValues": [
+        "HTTP",
+        "HTTPS",
+        "TCP",
+        "SSL"
+      ]
+    },
+    "LoadBalancerProtocol1": {
+      "Default": "HTTP",
+      "Type": "String",
+      "Description": "Specifies the protocol to use for the Load Balancer HTTP / HTTPS / TCP / SSL.",
+      "AllowedValues": [
+        "HTTP",
+        "HTTPS",
+        "TCP",
+        "SSL"
+      ]
+    },
+    "EnableRackspaceTicket": {
+      "Default": "False",
+      "Type": "String",
+      "Description": "Specifies whether alarms will generate Rackspace tickets",
+      "AllowedValues": [
+        "False",
+        "True"
+      ]
+    },
+    "Subnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "A list of subnet IDs in your virtual private cloud (VPC) to attach to your load balancer."
+    },
+    "Scheme": {
+      "Default": "internet-facing",
+      "Type": "String",
+      "Description": "Specifies whether to create an internal CLB or a public facing one.",
+      "AllowedValues": [
+        "internet-facing",
+        "internal"
+      ]
+    },
+    "HealthTimeout": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "5",
+      "Type": "String",
+      "Description": "Number of seconds during which no response means a failed health probe.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "Instances": {
+      "Default": "",
+      "Type": "CommaDelimitedList",
+      "Description": "A list of EC2 instance IDs for the load balancer. Use when not assigned to auto scale group."
+    },
+    "CreateLoggingBucket": {
+      "Default": "true",
+      "Type": "String",
+      "Description": "Create a new S3 logging bucket",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    },
+    "AppCookieName": {
+      "Default": "",
+      "Type": "String",
+      "Description": "Generates a stickiness policy based upon an application cookie. Leave blank not to use.  Overrides CookieExpirationPeriod."
+    },
+    "InternalZoneName": {
+      "Default": "",
+      "Type": "String",
+      "Description": "TLD for Internal Hosted Zone"
+    },
+    "InstancePort1": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "80",
+      "Type": "String",
+      "Description": "Specifies the TCP port on which the instance server is listening.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "InstancePort2": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "80",
+      "Type": "String",
+      "Description": "Specifies the TCP port on which the instance server is listening.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "HealthInterval": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "30",
+      "Type": "String",
+      "Description": "Seconds between health checks.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "HealthTarget": {
+      "AllowedPattern": "^(TCP|SSL):[0-9]+$||^HTTPS?:[0-9]+/.*$",
+      "Default": "HTTP:80/",
+      "Type": "String",
+      "Description": "Protocol & port check on instance. TCP:5000 | SSL:5000 || HTTP(S) = HTTP:80/path/to/my/file.",
+      "ConstraintDescription": "Must be a valid port:protocol.  For HTTP or HTTPS protocols, should also include a valid path"
+    },
+    "S3BucketPrefix": {
+      "Default": "FrontendCLBLogs",
+      "Type": "String",
+      "Description": "The prefix for the location in the S3 bucket. If you don't specify a prefix, the access logs are stored in the root of the bucket."
+    },
+    "UnHealthyThreshold": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "3",
+      "Type": "String",
+      "Description": "Consecutive failed checks before marking instance unhealthy.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "HealthyThreshold": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "3",
+      "Type": "String",
+      "Description": "Consecutive successful checks before marking instance healthy.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "ASGTargets": {
+      "Default": "true",
+      "Type": "String",
+      "Description": "Are the targets part of an auto scaling group.",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    },
+    "SSLIdCert": {
+      "AllowedPattern": "^$|^arn:aws:iam::[0-9]{12}:server-certificate/.+$|^arn:aws:acm:(us|eu|ap|sa|ca)-(east|west|north|south|southeast|northeast|central)-[1-9]:[0-9]{12}:certificate/.+$",
+      "Default": "",
+      "Type": "String",
+      "Description": "SSL Certificate Name. Full ARN required.",
+      "ConstraintDescription": "Must be a valid ACM or IAM certificate ARN"
+    },
+    "CrossZone": {
+      "Default": "true",
+      "Type": "String",
+      "Description": "Whether cross-zone load balancing is enabled for the load balancer.",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    },
+    "CookieExpirationPeriod": {
+      "AllowedPattern": "^[0-9]+$||^$",
+      "Default": "",
+      "Type": "String",
+      "Description": "Generates a stickiness policy with sticky session lifetimes controlled by a specified expiration period. Leave blank not to use.",
+      "ConstraintDescription": "Must be an interger value or empty string."
+    },
+    "LogRetention": {
+      "Default": "14",
+      "MinValue": "1",
+      "Type": "Number",
+      "Description": "The number of days to retain load balancer logs.  Parameter is ignored if not creating a new S3 bucket.",
+      "MaxValue": "999"
+    },
+    "SecurityGroupList": {
+      "Type": "List<AWS::EC2::SecurityGroup::Id>",
+      "Description": "A list of EC2 security groups to assign to this resource."
+    },
+    "DefaultBucketEncryption": {
+      "Default": "AES256",
+      "Type": "String",
+      "Description": "Enable default bucket encryption",
+      "AllowedValues": [
+        "Disabled",
+        "AES256",
+        "aws:kms"
+      ]
+    },
+    "InstanceProtocol2": {
+      "Default": "HTTP",
+      "Type": "String",
+      "Description": "Specifies the protocol to use for routing traffic to back-end instances HTTP / HTTPS / TCP / SSL.",
+      "AllowedValues": [
+        "HTTP",
+        "HTTPS",
+        "TCP",
+        "SSL"
+      ]
+    },
+    "LoadBalancerPort2": {
+      "AllowedPattern": "^[0-9]+$",
+      "Default": "443",
+      "Type": "String",
+      "Description": "Specifies the external load balancer port number.",
+      "ConstraintDescription": "Must be an interger value."
+    },
+    "EnableListener1": {
+      "Default": "True",
+      "Type": "String",
+      "Description": "Enable Primary Listener on the Load Balancer",
+      "AllowedValues": [
+        "True",
+        "False"
+      ]
+    },
+    "EnableListener2": {
+      "Default": "False",
+      "Type": "String",
+      "Description": "Enable Primary Listener on the Load Balancer",
+      "AllowedValues": [
+        "True",
+        "False"
+      ]
+    },
+    "LogAccessControl": {
+      "Default": "BucketOwnerFullControl",
+      "Type": "String",
+      "ConstraintDescription": "Must be either AuthenticatedRead, AwsExecRead, BucketOwnerRead, BucketOwnerFullControl, LogDeliveryWrite, Private, PublicRead or PublicReadWrite.",
+      "Description": "Define ACL for Bucket",
+      "AllowedValues": [
+        "AuthenticatedRead",
+        "AwsExecRead",
+        "BucketOwnerRead",
+        "BucketOwnerFullControl",
+        "LogDeliveryWrite",
+        "Private",
+        "PublicRead",
+        "PublicReadWrite"
+      ]
+    },
+    "S3BucketName": {
+      "Description": "The name of the bucket to use for CLB logs. Must be unique.",
+      "Default": "",
+      "ConstraintDescription": "The bucket name must contain only lowercase letters, numbers, periods (.), and dashes (-).",
+      "AllowedPattern": "^$||^([a-z0-9]+[\\.\\-]?[a-z0-9]*)+[a-z0-9.]$",
+      "MaxLength": 63,
+      "Type": "String"
+    },
+    "TimeOut": {
+      "Default": "0",
+      "MinValue": "0",
+      "Type": "Number",
+      "Description": "The time (in seconds) that a connection to the load balancer can remain idle, which means no data is sent over the connection. After the specified time, the load balancer closes the connection.",
+      "MaxValue": "3600"
+    },
+    "LoadBalancerName": {
+      "AllowedPattern": "^[^-][\\w-]+",
+      "Default": "NewCLB",
+      "Type": "String",
+      "Description": "This name must be unique within your set of load balancers for the region.",
+      "MaxLength": "32"
+    },
+    "InternalZoneId": {
+      "Default": "",
+      "Type": "String",
+      "Description": "The Route53 Internal Hosted Zone ID"
+    },
+    "InstanceProtocol1": {
+      "Default": "HTTP",
+      "Type": "String",
+      "Description": "Specifies the protocol to use for routing traffic to back-end instances HTTP / HTTPS / TCP / SSL.",
+      "AllowedValues": [
+        "HTTP",
+        "HTTPS",
+        "TCP",
+        "SSL"
+      ]
+    }
+  },
+  "Conditions": {
+    "AppCookieStickinessPolicy1": {
+      "Fn::And": [
+        {
+          "Condition": "AppCookieStickinessPolicy"
+        },
+        {
+          "Fn::Not": [
+            {
+              "Condition": "TcpEnabled1"
+            }
+          ]
+        }
+      ]
+    },
+    "AppCookieStickinessPolicy2": {
+      "Fn::And": [
+        {
+          "Condition": "AppCookieStickinessPolicy"
+        },
+        {
+          "Fn::Not": [
+            {
+              "Condition": "TcpEnabled2"
+            }
+          ]
+        }
+      ]
+    },
+    "isInternal": {
+      "Fn::Equals": [
+        {
+          "Ref": "Scheme"
+        },
+        "internal"
+      ]
+    },
+    "EnableDefaultEncryption": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "DefaultBucketEncryption"
+            },
+            "Disabled"
+          ]
+        }
+      ]
+    },
+    "isInternalHostedZoneIdProvided": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "InternalZoneId"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "NewS3Bucket": {
+      "Fn::Equals": [
+        {
+          "Ref": "CreateLoggingBucket"
+        },
+        "true"
+      ]
+    },
+    "isNotASG": {
+      "Fn::Equals": [
+        {
+          "Ref": "ASGTargets"
+        },
+        "false"
+      ]
+    },
+    "isTimeout": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TimeOut"
+            },
+            "0"
+          ]
+        }
+      ]
+    },
+    "CookieStickinessPolicy": {
+      "Fn::Not": [
+        {
+          "Fn::Or": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "CookieExpirationPeriod"
+                },
+                ""
+              ]
+            },
+            {
+              "Condition": "AppCookieStickinessPolicy"
+            }
+          ]
+        }
+      ]
+    },
+    "Listener2Enabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableListener2"
+        },
+        "True"
+      ]
+    },
+    "BucketNameSet": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "S3BucketName"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "SSLEnabled1": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol1"
+            },
+            "SSL"
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol1"
+            },
+            "HTTPS"
+          ]
+        }
+      ]
+    },
+    "SSLEnabled2": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol2"
+            },
+            "SSL"
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol2"
+            },
+            "HTTPS"
+          ]
+        }
+      ]
+    },
+    "isCLBConnectionDrain": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ConnectionDrainingTimeout"
+            },
+            "0"
+          ]
+        }
+      ]
+    },
+    "CookieStickinessPolicy2": {
+      "Fn::And": [
+        {
+          "Condition": "CookieStickinessPolicy"
+        },
+        {
+          "Fn::Not": [
+            {
+              "Condition": "TcpEnabled2"
+            }
+          ]
+        }
+      ]
+    },
+    "CookieStickinessPolicy1": {
+      "Fn::And": [
+        {
+          "Condition": "CookieStickinessPolicy"
+        },
+        {
+          "Fn::Not": [
+            {
+              "Condition": "TcpEnabled1"
+            }
+          ]
+        }
+      ]
+    },
+    "AppCookieStickinessPolicy": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "AppCookieName"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "RackspaceAlarmsEnabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableRackspaceTicket"
+        },
+        "True"
+      ]
+    },
+    "BrowserSessionStickiness": {
+      "Fn::Equals": [
+        {
+          "Ref": "CookieExpirationPeriod"
+        },
+        "0"
+      ]
+    },
+    "TcpEnabled2": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol2"
+            },
+            "SSL"
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol2"
+            },
+            "TCP"
+          ]
+        }
+      ]
+    },
+    "TcpEnabled1": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol1"
+            },
+            "SSL"
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LoadBalancerProtocol1"
+            },
+            "TCP"
+          ]
+        }
+      ]
+    },
+    "Listener1Enabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableListener1"
+        },
+        "True"
+      ]
+    },
+    "isCLBLogging": {
+      "Fn::Or": [
+        {
+          "Condition": "BucketNameSet"
+        },
+        {
+          "Condition": "NewS3Bucket"
+        }
+      ]
+    }
+  },
+  "Mappings": {
+    "LogAccountIds": {
+      "us-west-1": {
+        "accountid": "027434742980"
+      },
+      "us-east-1": {
+        "accountid": "127311923021"
+      },
+      "us-east-2": {
+        "accountid": "033677994240"
+      },
+      "ap-northeast-1": {
+        "accountid": "582318560864"
+      },
+      "eu-west-1": {
+        "accountid": "156460612806"
+      },
+      "ap-northeast-2": {
+        "accountid": "600734575887"
+      },
+      "eu-central-1": {
+        "accountid": "054676820928"
+      },
+      "ap-southeast-1": {
+        "accountid": "114774131450"
+      },
+      "ca-central-1": {
+        "accountid": "985666609251"
+      },
+      "ap-southeast-2": {
+        "accountid": "783225319266"
+      },
+      "us-west-2": {
+        "accountid": "797873946194"
+      },
+      "us-gov-west-1": {
+        "accountid": "048591011584"
+      },
+      "ap-south-1": {
+        "accountid": "718504428378"
+      },
+      "cn-north-1": {
+        "accountid": "638102146993"
+      },
+      "sa-east-1": {
+        "accountid": "507241528517"
+      },
+      "eu-west-2": {
+        "accountid": "652711504416"
+      },
+      "eu-west-3": {
+        "accountid": "009996457667"
+      }
+    }
+  },
+  "Resources": {
+    "S3BucketwithLogging": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": {
+          "Ref": "LogAccessControl"
+        },
+        "BucketEncryption": {
+          "Fn::If": [
+            "EnableDefaultEncryption",
+            {
+              "ServerSideEncryptionConfiguration": [
+                {
+                  "ServerSideEncryptionByDefault": {
+                    "SSEAlgorithm": {
+                      "Ref": "DefaultBucketEncryption"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Status": "Enabled",
+              "ExpirationInDays": {
+                "Ref": "LogRetention"
+              }
+            }
+          ]
+        },
+        "BucketName": {
+          "Fn::If": [
+            "BucketNameSet",
+            {
+              "Ref": "S3BucketName"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Value": {
+              "Ref": "Environment"
+            },
+            "Key": "Environment"
+          },
+          {
+            "Value": {
+              "Ref": "AWS::StackName"
+            },
+            "Key": "Name"
+          },
+          {
+            "Value": "Rackspace",
+            "Key": "ServiceProvider"
+          }
+        ]
+      },
+      "Condition": "NewS3Bucket"
+    },
+    "S3LoggingBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2008-10-17",
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Sid": "AccessLogs20130930",
+              "Resource": {
+                "Fn::Sub": "arn:aws:s3:::${S3BucketwithLogging}/*"
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::FindInMap": [
+                      "LogAccountIds",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      "accountid"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "Bucket": {
+          "Ref": "S3BucketwithLogging"
+        }
+      },
+      "Condition": "NewS3Bucket"
+    },
+    "UnHealthyHostCountAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "10",
+        "Dimensions": [
+          {
+            "Name": "LoadBalancerName",
+            "Value": {
+              "Ref": "CLB"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Fn::If": [
+              "RackspaceAlarmsEnabled",
+              {
+                "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:rackspace-support-emergency"
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "AlarmDescription": "Unhealthy Host count is above threshold, creating ticket.",
+        "Namespace": "AWS/ELB",
+        "Period": "60",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Statistic": "Maximum",
+        "Threshold": "1",
+        "OKActions": [
+          {
+            "Fn::If": [
+              "RackspaceAlarmsEnabled",
+              {
+                "Fn::Sub": "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:rackspace-support-emergency"
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "Unit": "Count",
+        "MetricName": "UnHealthyHostCount"
+      }
+    },
+    "CLB": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "AppCookieStickinessPolicy": [
+          {
+            "Fn::If": [
+              "AppCookieStickinessPolicy",
+              {
+                "PolicyName": "AppCookieBasedPolicy",
+                "CookieName": {
+                  "Ref": "AppCookieName"
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "ConnectionDrainingPolicy": {
+          "Fn::If": [
+            "isCLBConnectionDrain",
+            {
+              "Enabled": true,
+              "Timeout": {
+                "Ref": "ConnectionDrainingTimeout"
+              }
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "AccessLoggingPolicy": {
+          "Fn::If": [
+            "isCLBLogging",
+            {
+              "S3BucketPrefix": {
+                "Ref": "S3BucketPrefix"
+              },
+              "Enabled": true,
+              "S3BucketName": {
+                "Fn::If": [
+                  "NewS3Bucket",
+                  {
+                    "Ref": "S3BucketwithLogging"
+                  },
+                  {
+                    "Ref": "S3BucketName"
+                  }
+                ]
+              },
+              "EmitInterval": 5
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}CLB"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ],
+        "HealthCheck": {
+          "HealthyThreshold": {
+            "Ref": "HealthyThreshold"
+          },
+          "Interval": {
+            "Ref": "HealthInterval"
+          },
+          "Target": {
+            "Ref": "HealthTarget"
+          },
+          "Timeout": {
+            "Ref": "HealthTimeout"
+          },
+          "UnhealthyThreshold": {
+            "Ref": "UnHealthyThreshold"
+          }
+        },
+        "LBCookieStickinessPolicy": [
+          {
+            "Fn::If": [
+              "CookieStickinessPolicy",
+              {
+                "PolicyName": "CookieBasedPolicy",
+                "CookieExpirationPeriod": {
+                  "Fn::If": [
+                    "BrowserSessionStickiness",
+                    {
+                      "Ref": "AWS::NoValue"
+                    },
+                    {
+                      "Ref": "CookieExpirationPeriod"
+                    }
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "Subnets": {
+          "Ref": "Subnets"
+        },
+        "Instances": {
+          "Fn::If": [
+            "isNotASG",
+            {
+              "Ref": "Instances"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "Listeners": [
+          {
+            "Fn::If": [
+              "Listener1Enabled",
+              {
+                "InstancePort": {
+                  "Ref": "InstancePort1"
+                },
+                "Protocol": {
+                  "Ref": "LoadBalancerProtocol1"
+                },
+                "InstanceProtocol": {
+                  "Ref": "InstanceProtocol1"
+                },
+                "LoadBalancerPort": {
+                  "Ref": "LoadBalancerPort1"
+                },
+                "PolicyNames": [
+                  {
+                    "Fn::If": [
+                      "CookieStickinessPolicy1",
+                      "CookieBasedPolicy",
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::If": [
+                      "AppCookieStickinessPolicy1",
+                      "AppCookieBasedPolicy",
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  }
+                ],
+                "SSLCertificateId": {
+                  "Fn::If": [
+                    "SSLEnabled1",
+                    {
+                      "Ref": "SSLIdCert"
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          },
+          {
+            "Fn::If": [
+              "Listener2Enabled",
+              {
+                "InstancePort": {
+                  "Ref": "InstancePort2"
+                },
+                "Protocol": {
+                  "Ref": "LoadBalancerProtocol2"
+                },
+                "InstanceProtocol": {
+                  "Ref": "InstanceProtocol2"
+                },
+                "LoadBalancerPort": {
+                  "Ref": "LoadBalancerPort2"
+                },
+                "PolicyNames": [
+                  {
+                    "Fn::If": [
+                      "CookieStickinessPolicy2",
+                      "CookieBasedPolicy",
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::If": [
+                      "AppCookieStickinessPolicy2",
+                      "AppCookieBasedPolicy",
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  }
+                ],
+                "SSLCertificateId": {
+                  "Fn::If": [
+                    "SSLEnabled2",
+                    {
+                      "Ref": "SSLIdCert"
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "CrossZone": {
+          "Ref": "CrossZone"
+        },
+        "SecurityGroups": {
+          "Ref": "SecurityGroupList"
+        },
+        "ConnectionSettings": {
+          "Fn::If": [
+            "isTimeout",
+            {
+              "IdleTimeout": {
+                "Ref": "TimeOut"
+              }
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        },
+        "LoadBalancerName": {
+          "Ref": "LoadBalancerName"
+        },
+        "Scheme": {
+          "Ref": "Scheme"
+        }
+      },
+      "Metadata": {
+        "LogBucketPolicy": {
+          "Fn::If": [
+            "NewS3Bucket",
+            {
+              "Ref": "S3LoggingBucketPolicy"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    },
+    "InternalRecordSet": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Comment": {
+          "Fn::Sub": "Internal Record Set for ${InternalRecordName}"
+        },
+        "HostedZoneId": {
+          "Ref": "InternalZoneId"
+        },
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "CLB",
+              "CanonicalHostedZoneNameID"
+            ]
+          },
+          "DNSName": {
+            "Fn::GetAtt": [
+              "CLB",
+              "DNSName"
+            ]
+          }
+        },
+        "Name": {
+          "Fn::Sub": "${InternalRecordName}.${InternalZoneName}."
+        }
+      },
+      "Condition": "isInternalHostedZoneIdProvided"
+    }
+  },
+  "Outputs": {
+    "UnHealthyHostCountAlarm": {
+      "Description": "UnHealthy Host Count Alarm Name.",
+      "Value": {
+        "Ref": "UnHealthyHostCountAlarm"
+      }
+    },
+    "S3BucketName": {
+      "Value": {
+        "Ref": "S3BucketwithLogging"
+      },
+      "Description": "S3 Logging Bucket Name.",
+      "Condition": "NewS3Bucket"
+    },
+    "CLB": {
+      "Description": "Elastic load balancer ID.",
+      "Value": {
+        "Ref": "CLB"
+      }
+    }
+  }
+}

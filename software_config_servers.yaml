@@ -1,0 +1,29 @@
+# software_config_servers.yaml
+heat_template_version: 2014-10-16
+
+parameters:
+  web_server_count:
+    type: number
+    default: 2
+    label: Number of web Servers
+    description: Number of web nodes
+    constraints:
+      - range: { min: 0, max: 4 }
+
+resources:
+  web_servers:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: {get_param: web_server_count}
+      resource_def:
+        type: http://3bc988ba1321050f2fb7-d5a81e953a1e52794222b844bcb16d0c.r84.cf2.rackcdn.com/HEAT-templates/software_config_server.yaml
+outputs:
+  server_ids:
+    description: WEB Servers IDs
+    value: {get_attr: [web_servers, web_server_id]}
+  server_ips:
+    description: WEB Servers IPS
+    value: {get_attr: [web_servers, web_server_ip]}
+  web_servers_resources:
+    description: WEB Servers 
+    value: { get_attr:  [ web-servers, networks, private, 0]  }

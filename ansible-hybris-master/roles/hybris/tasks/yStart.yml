@@ -1,0 +1,13 @@
+---
+
+  - name: Stop Hybris
+    command: chdir=/opt/hybris/bin/platform {{ item }}
+    with_items:
+    - sh hybrisserver.sh stop
+    when: hybrisLocal.changed
+
+  - name: Start Hybris
+    command: chdir=/opt/hybris/bin/platform {{ item }}
+    with_items:
+    - sh hybrisserver.sh start
+    when: hybrisLocal.changed

@@ -1,0 +1,42 @@
+---
+jenkins_java_path: ""
+jenkins_java_options: ""
+
+jenkins_home_path: ""
+jenkins_log_path: ""
+jenkins_ip: ""
+jenkins_port: ""
+jenkins_args: ""
+
+jenkins_deb: 'http://pkg.jenkins-ci.org/debian-stable/binary/jenkins_1.651.3_all.deb'
+jenkins_rpm: 'http://pkg.jenkins-ci.org/redhat-stable/jenkins-1.651.3-1.1.noarch.rpm'
+
+jenkins_plugins: ["credentials",
+"ssh-credentials",
+"scm-api",
+"multiple-scms",
+"git-client",
+"git",
+"github-api",
+"github",
+"ghprb",
+"jquery",
+"backup",
+"mailer",
+"javadoc",
+"maven-plugin",
+"violations",
+"dashboard-view",
+"parameterized-trigger",
+"build-pipeline-plugin",
+"simple-theme-plugin",
+"swarm"]
+
+jenkins_plugins_url: 'http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins'
+jenkins_url: 'http://localhost:{{ jenkins_port }}'
+
+jenkins_role: master
+
+jenkins_swarm_client: 'https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/2.2/swarm-client-2.2-jar-with-dependencies.jar'
+
+jenkins_admin_pass: 'admin123'

@@ -1,0 +1,8 @@
+---
+  - name: testable
+    remote_user: ansible
+    become: yes
+    become_user: root
+    yum:
+      name: krb5-devel
+      state: latest

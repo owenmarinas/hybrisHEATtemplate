@@ -1,0 +1,18 @@
+resources:
+  my_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: 75
+      volume_type: SATA
+
+  my_server:
+    type: OS::Nova::Server
+    properties:
+      image: Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM) (Orchestration)
+      flavor: 2 GB General Purpose v1
+
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: my_volume }
+      instance_uuid: { get_resource: my_server }

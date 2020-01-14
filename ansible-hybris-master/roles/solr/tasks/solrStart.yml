@@ -1,0 +1,9 @@
+---
+
+  - name: (Re)Start Solr Service
+    service:
+      name: solr
+      enabled: yes
+      state: restarted
+    register: solrStart
+    when: solrDir.stat.exists == False or solrIn.changed

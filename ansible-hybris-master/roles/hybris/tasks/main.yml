@@ -1,0 +1,4 @@
+---
+- include: yInstall.yml
+- include: yConfig.yml
+- include: yStart.yml

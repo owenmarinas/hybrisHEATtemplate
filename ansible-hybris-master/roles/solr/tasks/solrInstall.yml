@@ -1,0 +1,72 @@
+---
+
+  - name: Create Solr Group
+    group:
+      name: solr
+      state: present
+      system: no
+
+  - name: Create Solr User
+    user:
+      name: solr
+      group: solr
+      home: /opt/solr
+      createhome: no
+      password: no
+      state: present
+      comment: "Solr User"
+
+  - stat: path=/opt/solr-{{ solrVersion }}.tgz
+    register: solrBin
+
+  - stat: path=/opt/solr
+    register: solrDir
+
+  - name: Download Solr
+    get_url:
+      url: "{{ SOLR_Download }}"
+      dest: /opt/solr-{{ solrVersion }}.tgz
+    ignore_errors: True
+    when: solrDir.stat.exists == False and solrBin.stat.exists == False
+    register: solrDownload
+
+  - name: Promote Solr Archive
+    copy:
+      src: solr-{{ solrVersion }}.tgz
+      dest: /opt/solr-{{ solrVersion }}.tgz
+      owner: solr 
+      group: solr
+      mode: 0655
+    when: solrDir.stat.exists == False and solrBin.stat.exists == False and solrDownload|failed
+
+  #- name: Extract Archive
+    #unarchive: 
+      #copy: no
+      #dest: /opt
+      #owner: root
+      #group: root
+      #mode: 0655
+      #src: /opt/solr-6.0.1.tgz
+    #when: solrDir.stat.exists == False
+
+  ## intentionally using command due to special characters in archive file throwing error ##
+  - name: Extract Archive
+    command:
+      tar -zxf /opt/solr-{{ solrVersion }}.tgz -C /opt/
+    when: solrDir.stat.exists == False
+ 
+  - name: create Solr link
+    file: path=/opt/solr
+          src=/opt/solr-{{ solrVersion }}     
+          state=link 
+          force=yes
+  
+  - name: install rhel sysv solr init script
+    copy: src=roles/solr/files/solr.init dest=/etc/rc.d/init.d/solr owner=root group=root mode=0755
+
+  - name: enable sysv solr service
+    service: name=solr enabled=yes
+
+  - name: start solr
+    service: name=solr state=started
+

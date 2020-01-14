@@ -1,0 +1,55 @@
+---
+- name: Create /etc/lsyncd.exclude
+  template:
+    src: 'Common/lsyncd.exclude.j2'
+    dest: '/etc/lsyncd.exclude'
+
+- name: Copy configuration
+  template:
+    src: 'Common/lsyncd.conf.j2'
+    dest: '/etc/lsyncd.conf'
+  when: (lsync_dirs|length > 0) and (lsync_dirs[0]|length > 0)
+
+- name: Create log directory
+  file:
+    path: '/var/log/lsyncd'
+    state: directory
+
+- name: Configure SSH Private Key
+  template:
+    src: 'Common/id_rsa.j2'
+    dest: '~root/.ssh/id_rsa'
+    mode: 0700
+    owner: root
+    group: root
+
+- name: Add SSH Private Key
+  shell: 'ssh-agent sh -c ssh-add'
+
+- name: Create Upstart Service
+  template:
+    src: 'Debian/upstart_instance.j2'
+    dest: '/etc/init/lsyncd.conf'
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Get current number of inotify watches
+  shell:
+    'cat /proc/sys/fs/inotify/max_user_watches'
+  register: inotify_output
+
+- name: Increase number of inotify watchers
+  shell:
+    'echo "fs.inotify.max_user_watches=65535" >> /etc/sysctl.conf'
+  when: inotify_output.stdout != 65535
+  register: inotify_change
+
+- name: Reload sysctl
+  shell:
+    'sysctl -p /etc/sysctl.conf'
+  when: inotify_change.changed
+
+- name: Start LSyncD
+  service:
+    name: lsyncd
+    state: restarted
+    enabled: yes

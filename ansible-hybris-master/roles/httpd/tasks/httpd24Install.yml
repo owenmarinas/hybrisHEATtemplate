@@ -1,0 +1,33 @@
+---
+  - stat: path=/tmp/ius-release.rpm
+    register: IUSrpm
+
+  #- name: Download IUS
+    #command: 
+      #wget -O /tmp/ius-release.rpm https://rhel6.iuscommunity.org/ius-release.rpm
+    #when: IUSrpm.stat.exists == False
+
+  - name: Download IUS
+    get_url:
+      url: https://rhel6.iuscommunity.org/ius-release.rpm
+      dest: /tmp/ius-release.rpm
+    when: IUSrpm.stat.exists == False
+    register: IUSdownload
+      
+
+  - name: Install IUS RPM
+    yum:
+      name: /tmp/ius-release.rpm
+      state: present
+    when: IUSdownload|changed
+
+  - name: Install HTTPd 2.4 (RHEL)
+    package:
+      name: "{{ item }}"
+      state: installed
+    with_items:
+      - httpd24u.x86_64
+      - httpd24u-devel.x86_64
+      - httpd24u-mod_ssl.x86_64
+      - httpd24u-tools.x86_64
+    when: ansible_os_family == "RedHat" and IUSdownload|changed

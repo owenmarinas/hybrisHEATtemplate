@@ -1,0 +1,4 @@
+---
+- include: solrInstall.yml
+- include: solrConfig.yml
+- include: solrStart.yml

@@ -1,0 +1,50 @@
+---
+
+  - stat: path=/opt/zookeeper
+    register: zooDir
+
+  - stat: path=/opt/zookeeper-3.4.8.tar.gz
+    register: zooBin
+
+  - name: Get ZK
+    get_url:
+      url: "{{ ZK_Download }}"
+      dest: /opt
+    when: zooDir.stat.exists == False and zooBin.stat.exists == False
+    ignore_errors: True
+    register: zooDownload
+
+  - name: Promote ZK
+    copy:
+      src: zookeeper-3.4.8.tar.gz
+      dest: /opt/
+      owner: root
+      group: root
+      mode: 0655
+    when: zooDir.stat.exists == False and zooBin.stat.exists == False and zooDownload|failed
+
+  - name: Extract Archive
+    command:
+      tar -zxf /opt/zookeeper-3.4.8.tar.gz -C /opt/
+    when: zooDir.stat.exists == False
+
+  - name: SymLink Zookeeper
+    file:
+      src: "/opt/zookeeper-3.4.8"
+      path: "/opt/zookeeper"
+      state: link
+    when: zooDir.stat.exists == False
+
+  - name: Create Zookeeper Lib
+    file:
+      path: "/var/lib/zookeeper"
+      state: directory
+      mode: 0755
+    when: zooDir.stat.exists == False
+
+  - name: Create Zookeeper Log
+    file:
+      path: "/opt/zookeeper/log"
+      state: directory
+      mode: 0755
+    when: zooDir.stat.exists == False

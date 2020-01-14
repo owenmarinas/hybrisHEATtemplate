@@ -1,0 +1,25 @@
+---
+
+  #- name: Update
+    #yum:
+      #name: "*"
+      #state: latest
+
+  - name: Install Java (RHEL)
+    package:
+      name: "{{ item }}"
+      state: installed
+    with_items:
+      - "java-{{ jVersion }}-openjdk.x86_64"
+      - "java-{{ jVersion }}-openjdk-src.x86_64"
+      - "java-{{ jVersion }}-openjdk-devel.x86_64"
+    when: ansible_os_family == "RedHat"
+
+  - name: Install Java (Debian)
+    package:
+      name: "{{ item }}"
+      state: installed
+    with_items:
+      - "openjdk-8-jdk"
+      - "openjdk-8-jdk-headless"
+    when: ansible_os_family == "Debian"

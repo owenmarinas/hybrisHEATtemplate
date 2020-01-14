@@ -1,0 +1,33 @@
+# software_config_server.yaml
+heat_template_version: 2015-10-15
+
+description: |
+ #hybris testing outputs
+parameters:
+  web_server_flavor:
+    type: string
+    default: 2 GB General Purpose v1
+    label: web Server Flavor
+    description: Flavor of Cloud Server to be used for web servers in this stack
+    constraints:
+    - allowed_values:
+      - 2 GB General Purpose v1
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+    
+resources:
+  web-server:
+   type: OS::Nova::Server
+   properties:
+       name: web-hyb
+       flavor: { get_param: web_server_flavor }
+       image: RAS-web-hybris
+
+outputs:
+  web_server_id:
+    description: WEB Server ID
+    value: {get_resource: web-server}
+  web_server_ip:
+    description: WEB Server IP
+    value: {get_attr: [web-server, networks, private, 0]}

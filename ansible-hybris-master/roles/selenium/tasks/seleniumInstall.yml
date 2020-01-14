@@ -1,0 +1,73 @@
+  # Prerequisites
+  - name: Firefox Install
+    yum:
+      name: firefox
+      state: latest
+
+  - name: Xvfb Install
+    yum:
+      name: Xvfb
+      state: present
+
+  - name: libXfont Install
+    yum:
+      name: libXfont
+      state: present
+
+  - name: Xorg Install
+    yum:
+      name: Xorg
+      state: present
+ 
+  - name: X Window System package group
+    yum:
+      name: "@X Window System"
+      state: present
+
+  - name: Desktop package group
+    yum:
+      name: "@Desktop"
+      state: present
+
+  - name: Fonts package group
+    yum:
+      name: "@Fonts"
+      state: present
+
+  - name: General Purpose Desktop package group
+    yum:
+      name: "@General Purpose Desktop"
+      state: present
+
+  - name: install rhel sysv xvfbd init script
+    copy: src=roles/selenium/files/xvfb-init  dest=/etc/rc.d/init.d/xvfb owner=root group=root mode=0755
+
+  - name: enable sysv xvfb service
+    service: name=xvfb enabled=yes
+
+  - name: start xvfb service
+    service: name=xvfb state=started
+
+  - stat: path=/opt/selenium
+    register: seleniumDir
+ 
+  - file: 
+      path: /opt/selenium
+      state: directory
+      mode: 0755
+
+  - name: install selenium-server-2.43.1 from myclud.rax
+    yum: 
+      name: http://3bc988ba1321050f2fb7-d5a81e953a1e52794222b844bcb16d0c.r84.cf2.rackcdn.com/selenium-server-2.43.1-1.x86_64.rpm
+      state: present
+
+  - name: enable sysv selenium service
+    service: 
+      name : selenium 
+      enabled: yes
+  
+  - service:
+     name: selenium
+     enabled: yes
+     state: started
+

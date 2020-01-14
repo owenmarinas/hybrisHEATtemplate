@@ -89,7 +89,7 @@ parameters:
       - range: { min: 0, max: 4 }
   hybris_server_count:
     type: number
-    default: 1
+    default: 2
     label: Number of hybris Servers
     description: Number of hybris nodes
     constraints:
@@ -97,14 +97,14 @@ parameters:
   hybris_admin_count:
     type: number
     default: 1
-    label: Number of hybris Servers
+    label: Number of hybris Admin
     description: Number of hybris nodes
     constraints:
       - range: { min: 1, max: 2 }
   solr_slaves_server_count:
     type: number
     default: 1
-    label: Number of solr slave Servers
+    label: Number of solr slave 
     description: Number of SOLR slaves nodes
     constraints:
       - range: { min: 0, max: 4 }
@@ -222,7 +222,7 @@ resources:
     depends_on: hybris-servers
     type: "Rackspace::Cloud::LoadBalancer"
     properties:
-      name: hybris_loadbalancer
+      name: hybris_lb
       nodes:
       - addresses: { get_attr: [ hybris-servers, networks, private, 0 ]  }
         port: 9001
@@ -288,7 +288,7 @@ resources:
         properties:
           name: hybris-%index%
           flavor: { get_param: app_server_flavor }
-          image: RAS-hybris63-4
+          image: RAS-hybris67
           user_data: { get_resource: hybrisInitScript }
   hybris-admin-servers:
     depends_on: hybris_database
@@ -300,7 +300,7 @@ resources:
         properties:
           name: admin-%index%
           flavor: { get_param: app_server_flavor }
-          image: RAS-hybris63-4
+          image: RAS-hybris67
           user_data: { get_resource: hybrisAdminInitScript }
   solr-master:
     type: OS::Heat::ResourceGroup
@@ -323,7 +323,12 @@ resources:
           name: solr-slave-%index%
           flavor: { get_param: solr_server_flavor }
           image: RAS-solr-hybris
-
+  prometheus:
+    type: OS::Nova::Server
+    properties:
+         name: solr-slave-%index%
+         flavor: 2GB Instance
+         image: Centos7-RAW-image
 outputs:
   web_servers_resources:
     description: WEB Servers 

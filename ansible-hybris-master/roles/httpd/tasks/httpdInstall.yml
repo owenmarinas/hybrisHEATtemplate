@@ -1,0 +1,22 @@
+---
+
+## optional fedora repo for 2.4 ##
+# curl -s https://repos.fedorapeople.org/repos/jkaluza/httpd24/epel-httpd24.repo > /etc/yum.repos.d/epel-httpd24.repo && yum install httpd24-httpd
+
+
+  - name: Install HTTPd (RHEL)
+    package:
+      name: "{{ item }}"
+      state: installed
+    with_items:
+      - "httpd"
+      - "mod_ssl"
+    when: ansible_os_family == "RedHat"
+
+  - name: Install HTTPd (Debian)
+    package:
+      name: "{{ item }}"
+      state: installed
+    with_items:
+      - "apache2"
+    when: ansible_os_family == "Debian"

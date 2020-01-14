@@ -1,0 +1,15 @@
+---
+
+  - name: Add IUS Repository
+    yum_repository:
+      name: ius
+      description: IUS YUM repo
+      baseurl: "https://dl.iuscommunity.org/pub/ius/stable/{{ ansible_distribution }}/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/"
+    when: ansible_os_family == "RedHat"
+
+  - name: Add EPEL Repository
+    yum_repository:
+      name: epel
+      description: EPEL YUM repo
+      baseurl: "https://dl.fedoraproject.org/pub/epel/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/"
+    when: ansible_os_family == "RedHat"

@@ -1,0 +1,22 @@
+$serverConfigName=clusterSolrServerConfig
+ 
+REMOVE SolrServerConfig;name[unique=true]
+;$serverConfigName
+
+# Create the solr server configuration
+INSERT_UPDATE SolrServerConfig;name[unique=true];mode(code);embeddedMaster;useMasterNodeExclusivelyForIndexing
+;$serverConfigName;standalone;false;true
+  
+#Add the endpoint urls for master and slave
+INSERT_UPDATE SolrEndpointUrl;solrServerConfig(name)[unique=true];url[unique=true];master[unique=true,default=false]
+{% for host in groups['solr'] %}
+;$serverConfigName;http://{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}:{{ solrPort }}
+{% endfor %}
+ 
+#Configure appare-uk index to use the server config
+UPDATE SolrFacetSearchConfig;name[unique=true];solrServerConfig(name)
+;apparel-ukIndex;$serverConfigName
+ 
+#Configure indexConfig to be direct mode
+Update SolrIndexConfig;name[unique=true];indexMode(code)
+;apparel-ukSolrIndexConfig;DIRECT

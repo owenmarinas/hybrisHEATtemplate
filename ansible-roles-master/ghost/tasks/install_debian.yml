@@ -1,0 +1,21 @@
+---
+- name: Install NodeJS
+  apt:
+    name: nodejs
+    state: present
+
+- name: Link 'node' to 'nodejs'
+  file:
+    src: '/usr/bin/nodejs'
+    path: '/usr/bin/node'
+    state: link
+
+- name: Install NPM
+  apt:
+    name: npm
+    state: present
+
+- name: Install Unzip
+  apt:
+    name: unzip
+    state: present

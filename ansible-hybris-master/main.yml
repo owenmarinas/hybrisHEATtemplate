@@ -1,0 +1,71 @@
+---
+
+- hosts: all
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - linux
+
+- hosts: java
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - java
+
+- hosts: zoo
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - zookeeper
+
+- hosts: solr
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - solr
+
+- hosts: hybris
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - hybris
+
+- hosts: web
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - httpd
+
+- hosts: mysql
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - mysql 
+
+- hosts: selenium
+  remote_user: ansible
+  become: yes
+  become_user: root
+  roles:
+    - selenium
+
+
+
+
+  gather_facts: true
+
+  vars:
+
+####################
+## ALWAYS set to 'N'
+##   When set to 'Y' (below) executes a full wipe
+##   Set to 'Y' via --extra-vars="CLEAN=Y" or -e "CLEAN=Y"
+#####################
+    CLEAN: 'N'

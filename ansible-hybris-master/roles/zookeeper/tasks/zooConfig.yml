@@ -1,0 +1,115 @@
+---
+  - name: Configure ZK
+    template:
+      backup: no
+      src: "zoo.cfg"
+      dest: "/opt/zookeeper-3.4.8/conf/zoo.cfg"
+    register: zkConfig
+
+  - name: Configure ZK ID
+    template:
+      backup: no
+      src: "myid"
+      dest: "/var/lib/zookeeper/myid"
+    register: zkID
+
+## necessary unless running Ansible 2.2 ##
+
+  #- name: Check IPTables Rules
+    #lineinfile:
+      #dest: /etc/sysconfig/iptables
+      #state: present
+      #create: no
+      #line: "*Zookeeper*Port -j ACCEPT"
+    #register: zooCheck
+
+  #- name: ZK Cluster Rules
+    #command:
+      #/sbin/iptables -I INPUT -p tcp --dport "{{ item[1] }}" -s "{{ hostvars[item[0]]['ansible_eth0']['ipv4']['address'] }}" -i eth0 -m comment --comment "Zookeeper Cluster Port" -j ACCEPT
+    #with_nested:
+      #- "{{ groups['zoo'] }}"
+      #- [ '2888', '3888' ]
+    #become: yes
+    #when: zooCheck.stdout != ""
+
+  #- name: ZK Client Rules
+    #command:
+      #/sbin/iptables -I INPUT -p tcp --dport "2182" -s "{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}" -i eth0 -m comment --comment "Zookeeper Client Port" -j ACCEPT
+    #with_items: "{{ groups['solr'] }}"
+    #become: yes
+    #when: zooCheck.stdout != ""
+
+  #- name: IPTables Save
+    #command:
+      #service iptables save
+    #become: yes
+    #register: zooTables
+    #when: zooCheck.stdout != ""
+
+##
+
+  - name: Baseline Configure IPTables
+    template:
+      backup: yes
+      src: iptables
+      owner: root
+      group: root
+      dest: "/etc/sysconfig/iptables"
+    register: zooTables
+
+  - name: IPTables Restart
+    service:
+      name: iptables
+      state: restarted
+      enabled: yes
+    when: zooTables.changed
+
+  - name: IPTables ZK Cluster
+    iptables:
+      chain: INPUT
+      ## requires ansible 2.2 ##
+      #action: insert
+      state: present
+      in_interface: eth0
+      protocol: tcp
+      jump: ACCEPT
+      destination_port: "{{ item[1] }}"
+      source: "{{ hostvars[item[0]]['ansible_eth0']['ipv4']['address'] }}"
+      comment: "Zookeeper Cluster Port"
+    with_nested:
+      - "{{ groups['zoo'] }}"
+      - [ "{{ zkServerLow | default(2888) }}", "{{ zkServerHigh | default(3888) }}" ]
+    become: yes
+    when: zooTables.changed
+
+  - name: IPTables ZK Client
+    iptables:
+      chain: INPUT
+      ## requires ansible 2.2 ##
+      #action: insert
+      state: present
+      in_interface: eth0
+      protocol: tcp
+      jump: ACCEPT
+      destination_port: "{{ zkClientPort | default(2181) }}"
+      source: "{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}"
+      comment: "Zookeeper Client Port"
+    with_items: "{{ groups['solr'] }}"
+    become: yes
+    when: zooTables.changed
+
+## this play MUST be the last IPTables change ##
+  - name: Return Default REJECT
+    iptables:
+      chain: INPUT
+      state: present
+      jump: REJECT
+    become: yes
+    when: zooTables.changed
+
+  - name: IPTables Save
+    command:
+      service iptables save
+    become: yes
+    register: zooTables
+    when: zooTables.changed

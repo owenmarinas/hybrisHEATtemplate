@@ -1,0 +1,9 @@
+---
+  - name: Configure IPTables (many to many)
+    template:
+      backup: yes
+      src: multitables
+      owner: root
+      group: root
+      dest: "/etc/sysconfig/iptables"
+    register: hybrisTables

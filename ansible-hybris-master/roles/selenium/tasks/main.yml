@@ -1,0 +1,4 @@
+---
+ - include: seleniumInstall.yml
+ - include: seleniumConfig.yml
+ 

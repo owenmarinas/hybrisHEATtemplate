@@ -1,0 +1,101 @@
+---
+
+  - name: Create hybris Group
+    group:
+      name: hybris
+      state: present
+      system: no
+
+  - name: Create hybris User
+    user:
+      name: hybris
+      group: hybris
+      home: /opt/hybris
+      createhome: no
+      password: no
+      state: present
+      comment: "hybris User"
+
+  - stat: path=/opt/hybris
+    register: hybrisDir
+
+  - stat: path=/tmp/hybris-commerce-suite-5.7.0.3.zip
+    register: hybrisBin
+
+  - name: Download Hybris
+    get_url:
+      url: "{{ Hybris_Download }}"
+      dest: /tmp/hybris-commerce-suite-5.7.0.3.zip
+    ignore_errors: True
+    when: hybrisDir.stat.exists == False and hybrisBin.stat.exists == False
+    register: hybrisDownload
+
+  - name: yArchive Copy
+    copy:
+      src: hybris-commerce-suite-5.7.0.3.zip
+      dest: /tmp/
+      mode: 0655
+      owner: root
+      group: root
+    when: hybrisDir.stat.exists == False and hybrisBin.stat.exists == False and hybrisDownload|failed
+
+  #- name: yExplode
+    #unarchive:
+      #src: /tmp/hybris-commerce-suite-5.7.0.3.zip
+      #dest: /opt
+      #owner: hybris
+      #group: hybris
+      #copy: no
+    #when: hybrisDir.stat.exists == False
+
+  - name: Extract Archive
+    command:
+      unzip -qq /tmp/hybris-commerce-suite-5.7.0.3.zip -d /opt/
+    when: hybrisDir.stat.exists == False
+
+  ## mark 8 ## - name: ySetup
+    ## mark 8 ## command: /opt/installer/install.sh -r {{ yRecipe }} setup
+    ## mark 8 ## when: hybrisDir.stat.exists == False
+## mark 8 ##
+  ## mark 8 ## - name: Wrapper Script
+    ## mark 8 ## copy:
+      ## mark 8 ## src: wrapper.conf
+      ## mark 8 ## dest: /opt/hybris/bin/platform/tomcat/bin/catalina.sh
+      ## mark 8 ## owner: hybris
+      ## mark 8 ## group: hybris
+      ## mark 8 ## mode: 0655
+
+  - name: Ant Template
+    template:
+      backup: no
+      src: util.xml
+      dest: "/opt/hybris/bin/platform/resources/ant/util.xml"
+      owner: hybris
+      group: hybris
+    register: prodtempl
+
+  - name: LocalExtensions
+    template:
+      backup: no
+      src: localextensions.xml
+      dest: "/opt/hybris/bin/platform/extensions.xml"
+      owner: hybris
+      group: hybris
+    register: localext
+
+  - name: Install Via Ant
+    command: chdir=/opt/hybris/bin/platform {{ item }}
+    with_items:
+    - sh /opt/hybris/bin/platform/apache-ant-1.9.1/bin/ant clean all
+    become: True
+    when: prodtempl.changed or localext.changed
+
+  - name: install rhel sysv hybris init script
+    copy: src=roles/hybris/files/hybris.init dest=/etc/rc.d/init.d/hybris owner=root group=root mode=0755
+
+  - name: enable sysv hybris service
+    service: name=hybris enabled=yes
+
+  - name: start hybris
+    service: name=hybris state=started
+

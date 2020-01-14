@@ -1,0 +1,42 @@
+---
+- name: Install PyCurl
+  apt:
+    name: python-pycurl
+    state: present
+
+- name: Include Debian Vars
+  include_vars: Debian.yml
+
+- name: Add Jenkins repository key
+  apt_key:
+    url: 'https://jenkins-ci.org/debian/jenkins-ci.org.key'
+    state: present
+    validate_certs: no
+
+- name: Add Jenkins repository
+  apt_repository:
+    repo: 'deb http://pkg.jenkins-ci.org/debian-stable binary/'
+    state: present
+
+- name: Install Java
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - 'openjdk-7-jre'
+    - 'openjdk-7-jdk'
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+
+# - name: Download Jenkins DEB
+#   get_url:
+#     url: '{{ jenkins_deb }}'
+#     dest: '/tmp/jenkins.deb'
+#
+# - name: Install Jenkins
+#   apt:
+#     deb: '/tmp/jenkins.deb'
+#     state: present

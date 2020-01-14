@@ -1,0 +1,4 @@
+---
+- include: zooInstall.yml
+- include: zooConfig.yml
+- include: zooStart.yml

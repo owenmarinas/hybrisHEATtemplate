@@ -1,0 +1,21 @@
+---
+joomla_download: 'https://github.com/joomla/joomla-cms/releases/download/3.5.0/Joomla_3.5.0-Stable-Full_Package.zip'
+
+joomla_pass: 'admin'
+joomla_salt: '{{ lookup("password", "/tmp/joomlasalt chars=ascii_letters,digits length=32") }}'
+joomla_pass_salt: '{{ joomla_pass }}{{joomla_salt}}'
+joomla_secret: '{{ lookup("password", "/tmp/joomlasecret chars=ascii_letters,digits") }}'
+
+joomla_db_host: localhost
+joomla_db_user: joomla
+joomla_db_password: 'joomlaPassword'
+joomla_db_name: joomla
+joomla_db_prefix: 'jos_'
+
+joomla_title: 'mahsite'
+joomla_url: 'example.com'
+joomla_path: '/var/www/vhosts/{{ joomla_url }}/httpdocs'
+
+joomla_user_name: 'Administrator'
+joomla_user: 'admin'
+joomla_user_email: 'admin@example.com'

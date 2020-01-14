@@ -1,0 +1,169 @@
+heat_template_version: 2015-10-15
+
+description: |
+ #### Production
+ This stack is intended for low to medium traffic production
+ websites and can be scaled as needed to accommodate future
+ growth.  This stack includes a Cloud Load Balancer, Cloud
+ Database, and a Master server (plus optional secondary
+ servers).  It also includes Cloud Monitoring and Cloud
+ Backups.
+
+parameter_groups:
+- label: Hybris Settings
+  parameters:
+  - hybris_url
+  - db_user
+  - db_name
+- label: rax-dev-params
+  parameters:
+  - secondary_template
+  - ansible_source
+parameters:
+  #Hybris Customization
+  hybris_url:
+    type: string
+    default: example.com
+    label: Site Domain
+    description: Domain used to configure Apache
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9.-]{1,255}.[a-zA-Z]{2,15}$"
+      description: Must be a valid domain name
+    immutable: true
+  db_user:
+    type: string
+    default: dbuser
+    label: Database User
+    description: Username to configure for SQL
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9.-_]{1,255}$"
+      description: Must only contain alphanumeric characters, '-', '_', and '.'
+    immutable: true
+  db_name:
+    type: string
+    default: hybrisdb
+    label: Database Name
+    description: Database to configure in SQL
+    constraints:
+    - allowed_pattern: "^[a-zA-Z0-9.-_]{1,255}$"
+      description: Must only contain alphanumeric characters, '-', '_', and '.'
+    immutable: true
+  #Advanced Options
+  app_server_flavor:
+    type: string
+    default: 4 GB General Purpose v1
+    label: Server Flavor
+    image: a853d6e8-f7cd-4195-8fcc-827bff265c1b
+    description: Flavor of Cloud Server to be used for hybris servers in this stack
+    constraints:
+    - allowed_values:
+      - 2 GB General Purpose v1
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  web_server_flavor:
+    type: string
+    default: 2 GB General Purpose v1
+    label: Server Flavor
+    description: Flavor of Cloud Server to be used for web servers in this stack
+    constraints:
+    - allowed_values:
+      - 2 GB General Purpose v1
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  database_disk:
+    type: number
+    default: 15
+    constraints:
+    - range:
+        min: 15
+        max: 50
+    label: Database Disk (in GB)
+    description: Size of the Cloud Database volume in GB
+    immutable: true
+  database_flavor:
+    type: string
+    default: 2GB Instance
+    label: Cloud Database Flavor
+    description: Flavor for the Cloud Database
+    constraints:
+    - allowed_values:
+      - 2GB Instance
+      - 4GB Instance
+      - 8GB Instance
+      - 16GB Instance
+  web_server_count:
+    type: number
+    default: 1
+    label: Number of Secondary Servers
+    description: Number of secondary web nodes
+    constraints:
+      - range: { min: 0, max: 4 }
+  hybris_server_count:
+    type: number
+    default: 1
+    label: Number of Secondary Servers
+    description: Number of secondary hybris nodes
+    constraints:
+      - range: { min: 0, max: 4 }
+resources:
+  #Passwords
+  database_pass:
+    type: OS::Heat::RandomString
+  #SSH Key
+  ssh_key:
+    type: OS::Nova::KeyPair
+    properties:
+      name: { get_param: "OS::stack_id" }
+      save_private_key: true
+  #Cloud Database
+  hybris_database:
+    type: OS::Trove::Instance
+    properties:
+      name:
+        str_replace:
+          template: stack_Database
+          params:
+            stack: { get_param: "OS::stack_name" }
+      flavor: { get_param: database_flavor }
+      size: { get_param: database_disk }
+      datastore_type: mysql
+      databases:
+      - name: { get_param: db_name }
+      - name: hybris
+      users:
+      - name: { get_param: db_user }
+        password: { get_attr: [database_pass, value] }
+        databases: [ { get_param: db_name } , hybris]
+outputs:
+  hybris_public_ip:
+    description: Load Balancer IP
+    value:
+      get_attr: [load_balancer, PublicIp]
+  mysql_user:
+    description: Database User
+    value: { get_param: db_user }
+  mysql_database:
+    description: Database Name
+    value: {get_param: db_name }
+  mysql_password:
+    description: Database Password
+    value:
+      get_attr: [database_pass, value]
+  mysql_host:
+    description: Database Host
+    value:
+      get_attr: [hybris_database, hostname]
+  ssh_private_key:
+    description: SSH Private Key
+    value:
+      get_attr: [ssh_key, private_key]
+  server_ip:
+    description: Server Public IP
+    value:
+      get_attr: [apache_server, accessIPv4]
+  secondary_ips:
+    description: Secondary Node IPs
+    value:
+      get_attr: [apache_secondary, public_ip]

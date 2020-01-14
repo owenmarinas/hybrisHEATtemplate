@@ -1,0 +1,231 @@
+###
+# All commented variables are optional
+#   All optional variables shown with default value
+# Uncommented variables are required
+###
+
+
+[all:vars]
+
+ManyMany=True 
+
+[web:vars]
+###
+# Apache HTTPd Version
+#   '24' -> 2.4; '22' -> 2.2; etc
+###
+httpdVersion=24
+
+[java:vars]
+jVersion="1.8.0"
+javaPlatform="openjdk"
+
+[hybris:vars]
+Hybris_Download="http://3bc988ba1321050f2fb7-d5a81e953a1e52794222b844bcb16d0c.r84.cf2.rackcdn.com/hybris-commerce-suite-5.7.0.10-70001174.zip"
+###
+# JGROUPS Cluster
+###
+## TCP port for cluster node communication
+#tcpPort=7080
+## Broadcast Method
+#bcast=jgroups
+## JGROUP Configuration
+#jgroupConf=jgroups-tcp.xml
+
+###
+# JDBC Variables
+###
+
+## MySQL JDBC ##
+## Connection string for databases
+dbConnection='jdbc:mysql://166.78.247.137/hybris?useConfigs=maxPerformance&characterEncoding=utf8'
+
+## JDBC Driver (HSQL included with Hybris)
+#dbDriver='com.mysql.jdbc.Driver'
+
+## StorageEngine Setting
+#tableType='InnoDB'
+
+## DB Authentication
+dbUser='hybris'
+dbPass='hellothisishybris'
+
+###
+# Hybris Install Variables
+###
+
+#Hybris_Download="http://url.hybris"
+
+###
+# Set build recipe
+###
+#yRecipe="platform_only"
+
+###
+# Hybris Ant Template
+#   available: develop | production
+###
+#templateName="develop"
+
+
+###
+# Hybris Configuration Variables
+###
+## -Xss
+#threadMax=1024k
+## -Xmx / -Xms
+## - note - 
+## 	as of mark 8 - no longer optional; required by ant template
+heapMax=4G
+## -XX:NewSize
+#newSize=1992M
+## -XX:MaxNewSize
+#newMax=2048M
+## -XX:MaxPermSize
+#permMax=300M
+## -XX:PermSize
+#permSize=200M
+## -XX:+<GC Name>
+#setGC=UseConcMarkSweepGC
+## -XX:ParallelGCThreads
+#gcThread=3
+## tomcat.debugjavaoptions
+#tcDebug=-Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,server=y,address=18000,suspend=n
+
+## End hybris:vars ##
+
+
+[solr:vars]
+###
+# Solr Install Variables
+###
+
+# Specify version of Solr to use
+# MUST match version from the name of the binary archive
+#solrVersion="5.5.2"
+solrVersion="5.3.0.embedded"
+
+# Specify download URL for Solr binaries
+# iff failed, Ansible will push local copy
+#SOLR_Download="http://www-us.apache.org/dist/lucene/solr/{{solrVersion}}/solr-{{solrVersion}}.tgz"
+SOLR_Download="http://3bc988ba1321050f2fb7-d5a81e953a1e52794222b844bcb16d0c.r84.cf2.rackcdn.com/solr-5.3.0.embedded.tgz"
+
+
+###
+# Solr Configuration Variables
+###
+
+# Increase Java Heap as needed to support your indexing / query needs
+SOLR_HEAP=4G
+
+# These GC settings have shown to work well for a number of common Solr workloads
+#GC_TUNE="-XX:NewRatio=3 \
+#-XX:SurvivorRatio=4 \
+#-XX:TargetSurvivorRatio=90 \
+#-XX:MaxTenuringThreshold=8 \
+#-XX:+UseConcMarkSweepGC \
+#-XX:+UseParNewGC \
+#-XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 \
+#-XX:+CMSScavengeBeforeRemark \
+#-XX:PretenureSizeThreshold=64m \
+#-XX:+UseCMSInitiatingOccupancyOnly \
+#-XX:CMSInitiatingOccupancyFraction=50 \
+#-XX:CMSMaxAbortablePrecleanTime=6000 \
+#-XX:+CMSParallelRemarkEnabled \
+#-XX:+ParallelRefProcEnabled"
+
+# Set the ZooKeeper connection string if using an external ZooKeeper ensemble
+# e.g. host1:2181,host2:2181/chroot
+# Leave empty if not using SolrCloud
+#ZK_HOST="104.130.199.26,104.130.199.30"
+
+# Set the ZooKeeper client timeout (for SolrCloud mode)
+#ZK_CLIENT_TIMEOUT="15000"
+
+# By default the start script uses "localhost"; override the hostname here
+# for production SolrCloud environments to control the hostname exposed to cluster state
+#SOLR_HOST=ansible_hostname
+
+# By default the start script uses UTC; override the timezone if needed
+#SOLR_TIMEZONE="UTC"
+
+# Location where the bin/solr script will save PID files for running instances
+# If not set, the script will create PID files in $SOLR_TIP/bin
+#SOLR_PID_DIR="/var/solr"
+
+# Path to a directory for Solr to store cores and their data. By default, Solr will use server/solr
+# If solr.xml is not stored in ZooKeeper, this directory needs to contain solr.xml
+#SOLR_HOME="/var/solr/data"
+
+# Solr provides a default Log4J configuration properties file in server/resources
+# however, you may want to customize the log settings and file appender location
+# so you can point the script to use a different log4j.properties file
+#LOG4J_PROPS="/var/solr/log4j.properties"
+
+# Location where Solr should write logs to; should agree with the file appender
+# settings in server/resources/log4j.properties
+#SOLR_LOGS_DIR="/var/solr/logs"
+
+# Sets the port Solr binds to, default is 8983
+solrPort=8983
+
+# True => SolrCloud ; False => Master / Slave
+cloud=False
+
+# Always set to false
+master=False
+
+# True => master is not a slave of itself ; False => master is also a slave
+standalone=False
+
+# File archive to unpack at /opt/solr/server/solr/configsets/
+#   This file MUST exist in roles/solr/files/ as named
+solrCollection=defaultCollection.tar.bz2
+
+## End solr:vars ##
+
+[zoo:vars]
+###
+# Zookeeper Install Variables
+###
+## Download URL for ZK
+ZK_Download="http://www-us.apache.org/dist/zookeeper/zookeeper-3.4.8/zookeeper-3.4.8.tar.gz"
+
+[mysql:vars]
+# this is the minor version to use "http://repo.mysql.com/yum/mysql-5.X-community/"
+MySQL_Version=6
+root_db_password='12345'
+
+[selenium:vars]
+Sel_Ver='2.53.0'
+
+###
+# Ansible Groups
+###
+
+## Java is needed by listed groups; configure as parent
+[java:children]
+hybris
+solr
+zoo
+selenium
+[hybris]
+#app01 ansible_ssh_host=104.130.134.107 webIP=104.130.155.36
+
+[web]
+#web01 ansible_ssh_host=104.130.155.36	appIP=104.130.134.107
+#web02 ansible_ssh_host=192.237.172.172 appIP=23.253.63.31
+
+[solr]
+#solr01 master=True ansible_ssh_host=172.99.117.107  
+#solr02 ansible_ssh_host=104.130.134.107
+
+[mysql]
+#mysql01  ansible_ssh_host=172.99.117.107
+
+[selenium]
+selenium ansible_ssh_host=172.99.117.107
+
+[zoo]
+#zoo01 serverID=1 ansible_ssh_host=
+#zoo02 serverID=2 ansible_ssh_host=

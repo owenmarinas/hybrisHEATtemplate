@@ -1,0 +1,34 @@
+# Creates database user 'hybris' and password '12345' with all database privileges
+  - name: Hybris DB
+    mysql_db:
+      name=hybrisdb
+      state=present
+
+  - name: Hybris user
+    mysql_user:
+      name: hybris
+      host: "{{ item }}"
+      password: "{{ root_db_password }}"
+    with_items:
+      - "hybrisdb"
+      - "{ ansible_hostname }}"
+      - "127.0.0.1"
+      - "::1"
+      - "localhost"
+
+  - name: Configure IPTables
+    lineinfile:
+      dest: /etc/sysconfig/iptables
+      state: present
+      insertafter: "^.*INPUT.*tcp.*22.*ACCEPT"
+      line: "-A INPUT -s {{ hostvars[item]['ansible_eth0']['ipv4']['address'] }} -i eth0 -p tcp -m tcp --dport {{ mysqlPort | default(3306) }} -m comment --comment \"MySQL Client Port\" -j ACCEPT"
+    with_items: "{{ groups['hybris'] }}"
+    become: yes
+    register: mysqlTables
+
+  - name: IPTables Restart
+    service:
+      name: iptables
+      state: restarted
+      enabled: yes
+    when: mysqlTables.changed

@@ -1,0 +1,555 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "securitygroup.template - Template for the security groups.",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Parameters": [
+            "Environment"
+          ],
+          "Label": {
+            "default": "Basic Configuration"
+          }
+        }
+      ]
+    }
+  },
+  "Parameters": {
+    "Environment": {
+      "Default": "Development",
+      "Type": "String",
+      "Description": "Application environment for which this network is being created. e.g. Development/Production.",
+      "AllowedValues": [
+        "Development",
+        "Integration",
+        "PreProduction",
+        "Production",
+        "QA",
+        "Staging",
+        "Test"
+      ]
+    },
+    "VPCID": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "Select Virtual Private Cloud ID."
+    }
+  },
+  "Resources": {
+    "PublicSSHSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 22,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 22
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Public SSH Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-PublicSSHSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "PrivateSSHSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 22,
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "PublicSSHSecurityGroup"
+            },
+            "FromPort": 22
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Private SSH Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-PrivateSSHSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "PrivateHybrisSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 9002,
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "PublicSSHSecurityGroup"
+            },
+            "FromPort": 9001
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Private hybris Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-PrivateHybrisSecGrp"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "MSSQLSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 1433,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 1433
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "MSSQL Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-MSSQLSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "PrivateECSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 61000,
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "PublicWebSecurityGroup"
+            },
+            "FromPort": 32768
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Private ECS Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-PrivateECSSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "PublicWebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 80,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 80
+          },
+          {
+            "ToPort": 443,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 443
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Public Web Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-PublicWebSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "NFSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 111,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 111
+          },
+          {
+            "ToPort": 111,
+            "IpProtocol": "udp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 111
+          },
+          {
+            "ToPort": 2049,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 2049
+          },
+          {
+            "ToPort": 2049,
+            "IpProtocol": "udp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 2049
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "NFS Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-NFSSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "EFSSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 2049,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 2049
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "EFS Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-EFSSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+       "PrivateWebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 80,
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "PublicWebSecurityGroup"
+            },
+            "FromPort": 80
+          },
+          {
+            "ToPort": 443,
+            "IpProtocol": "tcp",
+            "SourceSecurityGroupId": {
+              "Ref": "PublicWebSecurityGroup"
+            },
+            "FromPort": 443
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Private Web Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-PrivateWebSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "MySQLSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 3306,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 3306
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "MySQL Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-MySQLSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+    "VpcEndpointSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 80,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 80
+          },
+          {
+            "ToPort": 443,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 443
+          }
+        ],
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "VPC Endpoint Security Group",
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${Environment}-VpcEndpointSecurityGroup"
+            }
+          },
+          {
+            "Key": "ServiceProvider",
+            "Value": "Rackspace"
+          }
+        ]
+      }
+    },
+   },
+  "Outputs": {
+     "PublicSSHSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "PublicSSHSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "PrivateWebSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "PrivateWebSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "NFSSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "NFSSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "MSSQLSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MSSQLSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "MySQLSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "MySQLSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "PrivateECSSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "PrivateECSSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "EFSSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "EFSSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+   
+    "PublicWebSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "PublicWebSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+    "PrivateSSHSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "PrivateSSHSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+  
+    "VpcEndpointSecurityGroup": {
+      "Value": {
+        "Fn::GetAtt": [
+          "VpcEndpointSecurityGroup",
+          "GroupId"
+        ]
+      }
+    },
+   }
+}

@@ -1,0 +1,19 @@
+---
+
+  #- name: Install Packages (yum)
+    #yum:
+      #name: "{{ item }}"
+      #state: installed
+    #with_items:
+      #- "lsof"
+      #- "unzip"
+    #become: True
+
+  - name: Install Packages (independent)
+    package:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - "lsof"
+      - "unzip"
+    become: True

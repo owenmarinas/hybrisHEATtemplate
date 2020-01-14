@@ -1,0 +1,16 @@
+---
+  - name: Create Multi Site
+    template:
+      src: multisite.conf
+      dest: /etc/httpd/conf.d/defaultsite.conf
+      owner: root
+      group: root
+      mode: 0655
+    register: httpSite
+
+  - name: HTTPd Restart
+    service:
+      name: httpd
+      state: restarted
+      enabled: yes
+    when: httpSite.changed

@@ -1,0 +1,9 @@
+---
+  - name: Configure IPTables (one to one)
+    template:
+      backup: yes
+      src: iptables
+      owner: root
+      group: root
+      dest: "/etc/sysconfig/iptables"
+    register: hybrisTables

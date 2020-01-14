@@ -1,0 +1,72 @@
+---
+  - name: MySQL Community Repository
+    template:
+      backup: no
+      src: mysql-community.repo
+      dest: "/etc/yum.repos.d/mysql-community.repo"
+
+  - name: pre-shared Key
+    copy:
+      src: RPM-GPG-KEY-mysql
+      dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql
+      owner: root
+      group: root
+      mode: 0655
+
+  - name: MySQL Server Install
+    yum:
+      name: mysql
+      state: latest
+
+  - name: MySQL Server Install
+    yum:
+      name: mysql-server
+      state: latest
+
+  - name: Python MySQLDB Install
+    yum:
+      name: MySQL-python
+      state: latest
+
+  - name: Start MySQLd
+    service:
+      name: mysqld
+      state: started
+      enabled: yes
+
+  - name: Initial my.cnf Template
+    template:
+      src: my.init.j2
+      dest: /root/.my.cnf
+      owner: root
+      group: root
+      mode: 0600
+
+  - name: Set root user Password
+    mysql_user:
+      name: root
+      host: "{{ item }}"
+      password: "{{ root_db_password }}"
+    with_items:
+      - "{ ansible_hostname }}"
+      - "127.0.0.1"
+      - "::1"
+      - "localhost"
+
+  - name: my.cnf Template
+    template:
+      src: my.cnf.j2
+      dest: /root/.my.cnf
+      owner: root
+      group: root
+      mode: 0600
+
+  - name: delete anonymous MySQL server user
+    mysql_user:
+      user: ""
+      state: "absent"
+ 
+  - name: remove the MySQL test database
+    mysql_db:
+      db: "test"
+      state: "absent"

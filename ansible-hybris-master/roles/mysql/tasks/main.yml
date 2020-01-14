@@ -1,0 +1,4 @@
+---
+- include: mysqlInstall.yml
+  #when: CLEAN == 'Y'
+- include: mysqlConfig.yml 

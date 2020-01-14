@@ -1,0 +1,79 @@
+---
+
+  ## mark 8 ## - name: yInitialize
+    ## mark 8 ## command: /opt/installer/install.sh -r {{ yRecipe }} initialize
+    ## mark 8 ## when: hybrisDir.stat.exists == False
+
+  - name: Configure Hybris
+    template:
+      backup: no
+      src: local.properties
+      owner: hybris
+      group: hybris
+      dest: "/opt/hybris/config/local.properties"
+    register: hybrisLocal
+
+  #- name: Solr Template
+    #template:
+      #backup: no
+      #src: solr.impex
+      #owner: hybris
+      #group: hybris
+      #dest: "/opt/hybris/config/solr.impex"
+
+  - include: SingleIPTables.yml
+    when: not ManyMany or "{{ ManyMany }}" == False
+
+  - include: ManyIPTables.yml
+    when: ManyMany or "{{ ManyMany }}" == True
+
+  - name: IPTables Restart
+    service:
+      name: iptables
+      state: restarted
+      enabled: yes
+    when: hybrisTables.changed
+
+  #- name: Configure Tomcat
+    #copy:
+      #src: wrapper.catalina
+      #dest: /opt/hybris/bin/platform/tomcat/bin/catalina.sh
+      #owner: hybris
+      #group: hybris
+      #mode: 0755
+
+  - name: Install Database Plugin
+    copy:
+      src: mysql-connector-java-5.1.38-bin.jar
+      dest: /opt/hybris/bin/platform/lib/dbdriver/mysql-connector-java-5.1.38-bin.jar
+      owner: hybris
+      group: hybris
+      mode: 0655
+    when: hybrisDir.stat.exists == False
+
+  - name: Remove Install Directory
+    file:
+      path: '/tmp/hybris*'
+      state: absent
+
+  - name: Remove Install Directory
+    file: 
+      path: '/opt/installer'
+      state: absent
+
+  #- name: Update Ownership
+    #file:
+      #path: '/opt/*'
+      #state: directory
+      #owner: hybris
+      #group: hybris
+      #recurse: yes
+
+  - name: Link Logs
+    file:
+      src: /opt/hybris/log/tomcat
+      dest: /var/log/hybris
+      owner: root
+      group: root
+      mode: 0755
+      state: link
