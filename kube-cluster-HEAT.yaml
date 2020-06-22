@@ -1,0 +1,99 @@
+#
+heat_template_version: 2015-10-15
+
+description: |
+ # For DEv only. 
+
+parameters:
+  master_node_flavor:
+    type: string
+    default: 4 GB General Purpose v1
+    label: Kube master Node Flavor
+    description: Kube master Node Flavor
+    constraints:
+    - allowed_values:
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  master_node_count:
+    type: number
+    default: 1
+    label: Number of master node
+    description: Number of master node
+    constraints:
+      - range: { min: 0, max: 4 }
+  node_flavor:
+    type: string
+    default: 4 GB General Purpose v1
+    label: Kube node Flavor
+    description: Kube node Flavor
+    constraints:
+    - allowed_values:
+      - 4 GB General Purpose v1
+      - 8 GB General Purpose v1
+    immutable: true
+  node_count:
+    type: number
+    default: 2
+    label: Number of Servers
+    description: Number of nodes
+    constraints:
+      - range: { min: 1, max: 4 }
+  server_image:
+    type: string
+    default: Ubuntu-16.04LTS
+    label: Server Image
+    description: Image to be used for all servers in this stack
+    constraints:
+    - allowed_values:
+      - Ubuntu-16.04LTS
+      - CentOS 7 (PVHVM) (Orchestration)
+    immutable: true
+
+resources:
+  nodes:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: node_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: kube-node-%index%
+          flavor: { get_param: node_flavor }
+          image: { get_param: server_image }
+  master_node:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: master_node_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          name: master-%index%
+          flavor: { get_param: master_node_flavor }
+          image: { get_param: server_image }
+  kubernetes_inst:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      config:
+        str_replace:
+          params:
+              $mydbpass: { get_param: master_node_flavor }
+          template: |
+                  #!/usr/bin/env bash
+                  # license: Apache
+                  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+                  add-apt-repository    "deb [arch=amd64] https://download.docker.com/linux/ubuntu  $(lsb_release -cs)   stable"
+                  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+                  echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" >> /etc/apt/sources.list.d/kubernetes.list
+                  apt-get update
+                  apt-get install -y docker-ce=18.06.1~ce~3-0~ubuntu kubelet=1.15.7-00 kubeadm=1.15.7-00 kubectl=1.15.7-00
+                  apt-mark hold docker-ce kubelet kubeadm kubectl
+                    
+outputs:
+  nodes_resources:
+    description: node-servers 
+    value: { get_attr: [ nodes, networks, public, 0 ]  }
+  master_node_resources:
+    description: master-node 
+    value: { get_attr: [ master_node, networks, public ]  }

@@ -84,21 +84,21 @@ parameters:
     type: number
     default: 1
     label: Number of web Servers
-    description: Number of web nodes
+    description: Number of web Servers
     constraints:
       - range: { min: 0, max: 4 }
   hybris_server_count:
     type: number
     default: 2
     label: Number of hybris Servers
-    description: Number of hybris nodes
+    description: Number of hybris Servers
     constraints:
       - range: { min: 1, max: 4 }
   hybris_admin_count:
     type: number
     default: 1
     label: Number of hybris Admin
-    description: Number of hybris nodes
+    description: NNumber of hybris Admin
     constraints:
       - range: { min: 1, max: 2 }
   solr_slaves_server_count:
@@ -112,6 +112,19 @@ parameters:
 resources:
   database_pass:
     type: OS::Heat::RandomString
+  sonarInstallScript:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: script
+      config:
+        str_replace:
+          params:
+            $mydbpass: { get_resource: database_pass}        
+          template: |
+                    #!/usr/bin/env bash
+                    # license: Apache
+                    echo 123123 >>/root/sonar.txt
+
   hybrisAdminInitScript:
     type: OS::Heat::SoftwareConfig
     properties:
@@ -135,18 +148,18 @@ resources:
                     sed -i "s/HYBRISDB/$myhybdbname/" /opt/hybris/config/local.properties
                     sed -i "s/DBUSER/$myhybdbuser/" /opt/hybris/config/local.properties                    
                     cat << EOF >> /usr/local/bin/compileHybris.sh
+                     #!/bin/bash
+                     set -x
                      systemctl stop hybris
                      cd /opt/hybris/bin/platform/
                      source ./setantenv.sh
                      ant clean all >/root/ant-output.log 2>&1
-                     sleep 30 ; while ! grep "SUCCESSFUL" /root/ant-output.log ; do echo "running ant..." ; sleep 10 ; done
                      ant initialize -Dtenant=master >/root/ant-init-output.log 2>&1
-                     #wait 15 minutes 
-                     sleep 600 ; while ! grep "SUCCESSFUL" /root/ant-init-output.log ; do echo "running ant..." ; sleep 60 ; done
                      chown hybris.hybris /opt/hybris* -R
                      rm -rf /var/log/hybris/*
-                     systemctl start hybris
                      systemctl enable hybris
+                     systemctl daemon-reload
+                     systemctl start hybris
                     EOF
                     bash /usr/local/bin/compileHybris.sh
                     #while ! grep "SUCCESSFUL" /var/log/messages ; do echo "not found";sleep 5;done
@@ -173,17 +186,19 @@ resources:
                     sed -i "s/HYBRISDB/$myhybdbname/" /opt/hybris/config/local.properties
                     sed -i "s/DBUSER/$myhybdbuser/" /opt/hybris/config/local.properties      
                     cat << EOF >> /usr/local/bin/compileHybris.sh
+                    #!/bin/bash
+                    set -x
                      #wait for 20 minutes or so to compile, waiting for the admin to init the DB
                      sleep 1500
                      systemctl stop hybris 
                      cd /opt/hybris/bin/platform/
                      source ./setantenv.sh
                      ant clean all >/root/ant-output.log 2>&1
-                     while ! grep "SUCCESSFUL" /root/ant-output.log ; do echo "running ant..." ; sleep 10 ; done
                      chown hybris.hybris /opt/hybris* -R
                      rm -rf /var/log/hybris/*
-                     systemctl start hybris
                      systemctl enable hybris
+                     systemctl daemon-reload
+                     systemctl start hybris
                     EOF
                     bash /usr/local/bin/compileHybris.sh 
   public_lb:
@@ -288,7 +303,7 @@ resources:
         properties:
           name: hybris-%index%
           flavor: { get_param: app_server_flavor }
-          image: RAS-hybris67
+          image: RAS_hybris67_25
           user_data: { get_resource: hybrisInitScript }
   hybris-admin-servers:
     depends_on: hybris_database
@@ -300,7 +315,7 @@ resources:
         properties:
           name: admin-%index%
           flavor: { get_param: app_server_flavor }
-          image: RAS-hybris67
+          image: RAS_hybris67_25
           user_data: { get_resource: hybrisAdminInitScript }
   solr-master:
     type: OS::Heat::ResourceGroup
@@ -326,13 +341,25 @@ resources:
   prometheus:
     type: OS::Nova::Server
     properties:
-         name: solr-slave-%index%
-         flavor: 2GB Instance
+         name: prometheus-server
+         flavor: 2 GB General Purpose v1
+         image: Centos7-RAW-image
+  sonar:
+    type: OS::Nova::Server
+    properties:
+         name: sonar-server
+         flavor: 2 GB General Purpose v1
          image: Centos7-RAW-image
 outputs:
   web_servers_resources:
     description: WEB Servers 
     value: { get_attr:  [ web-servers, networks, private, 0 ]  }
+  sonar_resources:
+    description: Sonar Server 
+    value: { get_attr:  [ sonar, networks, public, 1 ]  } 
+  prometheus_resources:
+    description: prometheus Server 
+    value: { get_attr:  [ prometheus, networks, public, 0 ]  }  
   admin-servers_resources:
     description: ADMIN Servers
     value: { get_attr: [ hybris-admin-servers, networks, private, 0 ]  }
