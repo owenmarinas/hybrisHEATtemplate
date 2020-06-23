@@ -7,6 +7,7 @@ description: |
  growth.  This stack will include a Cloud Load Balancer, Cloud
  Database, 2 webs, 2 hybris and 2 solrs servers.  
  It also will include Cloud Monitoring.
+ rack orchestration stack  create --name hybris2005_1 --template-url  https://raw.githubusercontent.com/owenmarinas/hybrisHEATtemplate/master/hybris-stack-2005.yml
 
 parameters:
   db_user:
@@ -157,6 +158,7 @@ resources:
                      ant initialize -Dtenant=master >/root/ant-init-output.log 2>&1
                      chown hybris.hybris /opt/hybris* -R
                      rm -rf /var/log/hybris/*
+                     ln -s /opt/hybris/log/tomcat/ hybris
                      systemctl enable hybris
                      systemctl daemon-reload
                      systemctl start hybris
@@ -276,6 +278,7 @@ resources:
       flavor: { get_param: database_flavor }
       size: { get_param: database_disk }
       datastore_type: mysql
+      datastore_version:5.5
       databases:
       - name: { get_param: db_name }
       users:
