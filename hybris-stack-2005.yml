@@ -278,7 +278,7 @@ resources:
       flavor: { get_param: database_flavor }
       size: { get_param: database_disk }
       datastore_type: mysql
-      datastore_version:5.5
+      datastore_version: 5.5
       databases:
       - name: { get_param: db_name }
       users:
