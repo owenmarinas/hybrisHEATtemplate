@@ -278,7 +278,7 @@ resources:
       flavor: { get_param: database_flavor }
       size: { get_param: database_disk }
       datastore_type: mysql
-      datastore_version: 5.7
+      datastore_version: "5.7"
       databases:
       - name: { get_param: db_name }
       users:
@@ -306,7 +306,7 @@ resources:
         properties:
           name: hybris-%index%
           flavor: { get_param: app_server_flavor }
-          image: RAS_hybris67_25
+          image: RAS_hybris2005_1
           user_data: { get_resource: hybrisInitScript }
   hybris-admin-servers:
     depends_on: hybris_database
