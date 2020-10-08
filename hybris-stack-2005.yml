@@ -158,7 +158,7 @@ resources:
                      ant initialize -Dtenant=master >/root/ant-init-output.log 2>&1
                      chown hybris.hybris /opt/hybris* -R
                      rm -rf /var/log/hybris/*
-                     ln -s /opt/hybris/log/tomcat/ hybris
+                     ln -s /opt/hybris/log/tomcat/ /var/log/hybris
                      systemctl enable hybris
                      systemctl daemon-reload
                      systemctl start hybris
@@ -183,6 +183,7 @@ resources:
                     #echo "DBHOST -- $mydbhost"       >>/root/hybrisinfo.txt
                     #echo "HYBRISDB -- $myhybdbname"  >>/root/hybrisinfo.txt
                     #echo "DBUSER -- $myhybdbuser"    >>/root/hybrisinfo.txt
+                    sleep 2400
                     sed -i "s/DBHOST/$mydbhost/" /opt/hybris/config/local.properties
                     sed -i "s/DBUSERPASSWD/$mydbpass/" /opt/hybris/config/local.properties
                     sed -i "s/HYBRISDB/$myhybdbname/" /opt/hybris/config/local.properties
@@ -272,7 +273,7 @@ resources:
     properties:
       name:
         str_replace:
-          template: stack_Database
+          template: stack_DB-Instance
           params:
             stack: { get_param: "OS::stack_name" }
       flavor: { get_param: database_flavor }
@@ -281,6 +282,20 @@ resources:
       datastore_version: "5.7"
       databases:
       - name: { get_param: db_name }
+      users:
+      - name: { get_param: db_user }
+        password: { get_attr: [database_pass, value] }
+        databases: [ { get_param: db_name } ]
+  slave_database:
+    type: OS::Trove::Instance
+    properties:
+      name: "Slave_DBInstance"
+      flavor: { get_param: database_flavor }
+      size: { get_param: database_disk }
+      datastore_type: mysql
+      datastore_version: "5.7"
+      databases:
+      - name:  "SlaveDB"  
       users:
       - name: { get_param: db_user }
         password: { get_attr: [database_pass, value] }
@@ -345,7 +360,7 @@ resources:
     type: OS::Nova::Server
     properties:
          name: prometheus-server
-         flavor: 2 GB General Purpose v1
+         flavor: 8 GB General Purpose v1
          image: Centos7-RAW-image
   sonar:
     type: OS::Nova::Server
@@ -379,7 +394,10 @@ outputs:
     description: Database User
     value: { get_param: db_user }
   mysql_database:
-    description: Database Name
+    description: Hybris Database 
+    value: {get_param: db_name }
+  slave_database:
+    description: Slave Database Name
     value: {get_param: db_name }
   mysql_password:
     description: Database Password
